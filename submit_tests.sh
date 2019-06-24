@@ -169,9 +169,6 @@ submit_job() {
 
 
 submit_jobs () {
-	echo "submit"
-	lavacli $LAVACLI_ARGS system whoami
-
 	for JOB in $TMP_DIR/*.yaml
 	do
 		submit_job $JOB
