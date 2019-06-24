@@ -1,0 +1,57 @@
+image: docker:stable
+
+services:
+  - docker:dind
+
+variables:
+  DOCKER_DRIVER: overlay2
+
+stages:
+  - build
+  - notify
+
+before_script:
+  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+
+build-image-master:
+  stage: build
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:build-latest || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:build-latest --tag $CI_REGISTRY_IMAGE:build-$CI_COMMIT_SHA --tag $CI_REGISTRY_IMAGE:build-latest -f build.Dockerfile .
+    - docker push $CI_REGISTRY_IMAGE:build-$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE:build-latest
+  retry: 1
+  only:
+    - master
+
+build-image:
+  stage: build
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:build-latest || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:build-latest --tag $CI_REGISTRY_IMAGE:build-$CI_COMMIT_REF_SLUG -f build.Dockerfile .
+    - docker push $CI_REGISTRY_IMAGE:build-$CI_COMMIT_REF_SLUG
+  retry: 1
+  except:
+    - master
+
+test-image-master:
+  stage: build
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:test-latest || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:test-latest --tag $CI_REGISTRY_IMAGE:test-$CI_COMMIT_SHA --tag $CI_REGISTRY_IMAGE:test-latest -f test.Dockerfile .
+    - docker push $CI_REGISTRY_IMAGE:test-$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE:test-latest
+  retry: 1
+  only:
+    - master
+
+test-image:
+  stage: build
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:test-latest || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:test-latest --tag $CI_REGISTRY_IMAGE:test-$CI_COMMIT_REF_SLUG -f test.Dockerfile .
+    - docker push $CI_REGISTRY_IMAGE:test-$CI_COMMIT_REF_SLUG
+  retry: 1
+  except:
+    - master
+
