@@ -119,6 +119,12 @@ find_kernels () {
 	#             └── modules
 	#                 └── modules.tar.gz
 
+	if [ ! -d $OUTPUT_DIR ]; then
+		echo "No output directory found, probably because there were no successful builds."
+		clean_up
+		exit 0
+	fi
+
 	cd $OUTPUT_DIR
 
 	for VERSION_DIR in `find * -maxdepth 0 -type d`
