@@ -13,6 +13,3 @@ RUN git clone https://gitlab.com/cip-project/cip-kernel/linux-cip.git /opt/linux
 COPY build_kernel.sh /opt/
 RUN chmod +x /opt/build_kernel.sh
 
-# Temp
-RUN apt-get install -y tree
-

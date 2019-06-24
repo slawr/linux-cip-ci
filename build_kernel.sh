@@ -205,8 +205,6 @@ copy_output () {
 		rm -rf $TMP_DIR/modules.tar.gz
 		rm -rf $MODULE_INSTALL_DIR
 	fi
-
-	tree $OUTPUT_DIR
 }
 
 
