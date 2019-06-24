@@ -8,7 +8,7 @@ RUN apt-get update
 RUN apt-get install -y apt-utils git build-essential libncurses-dev bison flex libssl-dev libelf-dev bc u-boot-tools wget kmod
 
 # Clone CIP repository
-RUN git clone https://git.kernel.org/pub/scm/linux/kernel/git/cip/linux-cip.git/ /opt/linux
+RUN git clone https://gitlab.com/cip-project/cip-kernel/linux-cip.git /opt/linux
 
 COPY build_kernel.sh /opt/
 RUN chmod +x /opt/build_kernel.sh
