@@ -9,7 +9,6 @@
 # lavacli aws
 #
 # The following must be set in GitLab CI variables for lavacli to work:
-# $CIP_LAVA_LAB_URI
 # $CIP_LAVA_LAB_USER
 # $CIP_LAVA_LAB_TOKEN
 #
@@ -29,10 +28,10 @@ WORK_DIR="$CI_BUILDS_DIR/$CI_PROJECT_PATH"
 TMP_DIR="$WORK_DIR/tmp"
 OUTPUT_DIR="$WORK_DIR/output"
 TEMPLATE_DIR="/opt/healthcheck_templates"
+################################################################################
 AWS_URL_UP="s3://download.cip-project.org/ciptesting/ci"
 AWS_URL_DOWN="https://s3-us-west-2.amazonaws.com/download.cip-project.org/ciptesting/ci"
-################################################################################
-LAVACLI_ARGS="--uri https://$CIP_LAVA_LAB_USER:$CIP_LAVA_LAB_TOKEN@$CIP_LAVA_LAB_URI"
+LAVACLI_ARGS="--uri https://$CIP_LAVA_LAB_USER:$CIP_LAVA_LAB_TOKEN@lava.ciplatform.org/RPC2"
 ################################################################################
 
 set_up () {
