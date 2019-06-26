@@ -48,6 +48,10 @@ variables being set. This can be done in GitLab in `settings/ci_cd`.
 ## Example Use
 The below `.gitlab-ci.yml` file shows how linux-cip-ci can be used.
 
+Note that the notify stage at the bottom will need `LINUX_CIP_BUILD_TRIGGER` to
+be set in the linux-cip-ci GitLab CI/CD settings to match the trigger configured
+in the linux-cip GitLab CI/CD settings.
+
 ```
 variables:
   GIT_STRATEGY: none
@@ -87,5 +91,15 @@ run_tests:
   before_script: []
   script:
     - /opt/submit_tests.sh
+
+notify:
+  stage: notify
+  image: appropriate/curl
+  before_script: []
+  script:
+    - "curl -X POST -F token=$LINUX_CIP_BUILD_TRIGGER -F ref=linux-4.19.y-cip https://gitlab.com/api/v4/projects/2678032/trigger/pipeline"
+  retry: 1
+  only:
+    - master
 ```
 
