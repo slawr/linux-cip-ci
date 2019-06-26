@@ -13,7 +13,7 @@
 # $CIP_LAVA_LAB_USER
 # $CIP_LAVA_LAB_TOKEN
 #
-# The following must be set in GitLab CI variables for lavacli to work:
+# The following must be set in GitLab CI variables for aws to work:
 # $CIP_CI_AWS_ID
 # $CIP_CI_AWS_KEY
 #

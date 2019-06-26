@@ -4,7 +4,7 @@
 # <chris.paterson2@renesas.com>
 #
 # This script takes a given architecture and configuration and installs the
-# required compiler and  builds the Kernel with it, ready for testing.
+# required compiler and builds the Kernel with it, ready for testing.
 #
 # Compiler installation influenced from the work done by Hiramatsu-san at:
 # https://github.com/mhiramat/linux-cross
