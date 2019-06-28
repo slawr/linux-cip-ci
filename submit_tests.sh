@@ -6,7 +6,7 @@
 # relevant test jobs to the CIP LAVA master.
 #
 # Script specific dependencies:
-# lavacli aws
+# lavacli aws pwd
 #
 # The following must be set in GitLab CI variables for lavacli to work:
 # $CIP_LAVA_LAB_USER
@@ -24,7 +24,7 @@
 set -ex
 
 ################################################################################
-WORK_DIR="$CI_BUILDS_DIR/$CI_PROJECT_PATH"
+WORK_DIR=`pwd`
 TMP_DIR="$WORK_DIR/tmp"
 OUTPUT_DIR="$WORK_DIR/output"
 TEMPLATE_DIR="/opt/healthcheck_templates"
@@ -44,29 +44,27 @@ clean_up () {
 
 # Using job definition templates based on device tree names
 get_template () {
-	local machine=$(echo "$DTB" | rev | cut -f 2- -d '.' | rev)
+	local machine=$(echo "$DTB_NAME" | rev | cut -f 2- -d '.' | rev)
 	TEMPLATE="$machine.yaml"
 }
 
 create_job () {
-	echo "Create job"
-
 	get_template
 
-	DTB_URL="$AWS_URL_DOWN/$CONFIG_DIR/dtb/$DTB"
-	KERNEL_URL="$AWS_URL_DOWN/$CONFIG_DIR/kernel/$KERNEL"
-	MODULES_URL="$AWS_URL_DOWN/$CONFIG_DIR/modules/$MODULES"
+	local dtb_url="$AWS_URL_DOWN/$DTB"
+	local kernel_url="$AWS_URL_DOWN/$KERNEL"
+	local modules_url="$AWS_URL_DOWN/$MODULES"
 
-	JOB_NAME="${VERSION}_${ARCH}_${CONFIG}_${DTB}"
-	JOB_DEFINITION="$TMP_DIR/$JOB_NAME.yaml"
-	cp $TEMPLATE_DIR/$TEMPLATE $JOB_DEFINITION
+	local job_name="${VERSION}_${ARCH}_${CONFIG}_${DTB_NAME}"
+	local job_definition="$TMP_DIR/$job_name.yaml"
+	cp $TEMPLATE_DIR/$TEMPLATE $job_definition
 
-	sed -i "s|JOB_NAME|$JOB_NAME|g" $JOB_DEFINITION
+	sed -i "s|JOB_NAME|$job_name|g" $job_definition
 	if [ ! -z "$MODULES" ]; then
-		sed -i "/DTB_URL/ a \    modules:\n      url: $MODULES_URL\n      compression: gz" $JOB_DEFINITION
+		sed -i "/DTB_URL/ a \    modules:\n      url: $modules_url\n      compression: gz" $job_definition
 	fi
-	sed -i "s|DTB_URL|$DTB_URL|g" $JOB_DEFINITION
-	sed -i "s|KERNEL_URL|$KERNEL_URL|g" $JOB_DEFINITION
+	sed -i "s|DTB_URL|$dtb_url|g" $job_definition
+	sed -i "s|KERNEL_URL|$kernel_url|g" $job_definition
 }
 
 configure_aws () {
@@ -77,74 +75,49 @@ configure_aws () {
 }
 
 upload_binaries () {
-
 	configure_aws
-
-	aws s3 sync $OUTPUT_DIR/. $AWS_URL_UP --acl public-read
+	aws s3 sync $OUTPUT_DIR/. $AWS_URL_UP --exclude jobs --acl public-read
 }
 
 print_kernel_info () {
 	set +x
 
-	echo "Kernel Found"
+	echo "Job Found"
 	echo "----------"
 	echo "Version: $VERSION"
 	echo "Arch: $ARCH"
 	echo "Config: $CONFIG"
-	echo "Kernel: $KERNEL"
-	echo "DTB: $DTB"
-	echo "Modules: $MODULES"
+	echo "Kernel: $KERNEL_NAME"
+	echo "DTB: $DTB_NAME"
+	echo "Modules: $MODULES_NAME"
 	echo "----------"
 
 	set -x
 }
 
-find_kernels () {
-	# Example build output directory structure
-	# $OUTPUT_DIR/
-	# └── 4.4.154-cip28_5dcb70a7e56e
-	#     ├── arm
-	#     │   └── shmobile_defconfig
-	#     │       ├── dtb
-	#     │       │   └── r8a7743-iwg20d-q7-dbcm-ca.dtb
-	#     │       └── kernel
-	#     │           └── uImage
-	#     └── arm64
-	#         └── defconfig
-	#             ├── dtb
-	#             │   └── r8a774c0-ek874.dtb
-	#             ├── kernel
-	#             │   └── Image
-	#             └── modules
-	#                 └── modules.tar.gz
+# JOBS_FILE should be structured with space separated values as below, one job
+# per line:
+# VERSION ARCH CONFIG KERNEL DEVICE_TREE MODULES
+# MODULES is optional
+find_jobs () {
+	# Search for job files
+	for jobfile in $OUTPUT_DIR/*.jobs; do
+		while read version arch config kernel device_tree modules; do
+			VERSION=$version
+			ARCH=$arch
+			CONFIG=$config
+			KERNEL=$kernel
+			DTB=$device_tree
+			MODULES=$modules
+	
+			# Get filename from path
+			KERNEL_NAME=`echo "$KERNEL" | sed "s/.*\///"`
+			DTB_NAME=`echo "$DTB" | sed "s/.*\///"`
+			MODULES_NAME=`echo "$MODULES" | sed "s/.*\///"`
 
-	if [ ! -d $OUTPUT_DIR ]; then
-		echo "No output directory found, probably because there were no successful builds."
-		clean_up
-		exit 0
-	fi
-
-	cd $OUTPUT_DIR
-
-	for VERSION_DIR in `find * -maxdepth 0 -type d`
-	do
-		VERSION=`echo "$VERSION_DIR" | sed "s/.*\///"`
-
-		for ARCH_DIR in `find $VERSION_DIR/* -maxdepth 0 -type d`
-		do
-			ARCH=`echo "$ARCH_DIR" | sed "s/.*\///"`
-
-			for CONFIG_DIR in `find $ARCH_DIR/* -maxdepth 0 -type d`
-			do
-				CONFIG=`echo "$CONFIG_DIR" | sed "s/.*\///"`
-				KERNEL=`find $CONFIG_DIR/kernel/ -type f | sed "s/.*\///"`
-				DTB=`find $CONFIG_DIR/dtb/ -type f | sed "s/.*\///"`
-				MODULES=`find $CONFIG_DIR/modules/ -type f | sed "s/.*\///"`
-
-				print_kernel_info
-				create_job
-			done
-		done
+			print_kernel_info
+			create_job
+		done < $jobfile
 	done
 }
 
@@ -169,8 +142,7 @@ submit_job() {
 
 
 submit_jobs () {
-	for JOB in $TMP_DIR/*.yaml
-	do
+	for JOB in $TMP_DIR/*.yaml; do
 		submit_job $JOB
 	done
 }
@@ -179,11 +151,10 @@ submit_jobs () {
 trap clean_up SIGHUP SIGINT SIGTERM
 set_up
 
-find_kernels
+find_jobs
 upload_binaries
 submit_jobs
 
 # TODO: Check to see if submitted jobs were actually successful.
 
 clean_up
-
