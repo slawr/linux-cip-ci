@@ -27,8 +27,8 @@ build-image-master:
 build-image:
   stage: build
   script:
-    - docker pull $CI_REGISTRY_IMAGE:build-latest || true
-    - docker build --cache-from $CI_REGISTRY_IMAGE:build-latest --tag $CI_REGISTRY_IMAGE:build-$CI_COMMIT_REF_SLUG -f build.Dockerfile .
+    - docker pull $CI_REGISTRY_IMAGE:build-$CI_COMMIT_REF_SLUG || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:build-$CI_COMMIT_REF_SLUG --tag $CI_REGISTRY_IMAGE:build-$CI_COMMIT_REF_SLUG -f build.Dockerfile .
     - docker push $CI_REGISTRY_IMAGE:build-$CI_COMMIT_REF_SLUG
   retry: 1
   except:
@@ -48,8 +48,8 @@ test-image-master:
 test-image:
   stage: build
   script:
-    - docker pull $CI_REGISTRY_IMAGE:test-latest || true
-    - docker build --cache-from $CI_REGISTRY_IMAGE:test-latest --tag $CI_REGISTRY_IMAGE:test-$CI_COMMIT_REF_SLUG -f test.Dockerfile .
+    - docker pull $CI_REGISTRY_IMAGE:test-$CI_COMMIT_REF_SLUG || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:test-$CI_COMMIT_REF_SLUG --tag $CI_REGISTRY_IMAGE:test-$CI_COMMIT_REF_SLUG -f test.Dockerfile .
     - docker push $CI_REGISTRY_IMAGE:test-$CI_COMMIT_REF_SLUG
   retry: 1
   except:
