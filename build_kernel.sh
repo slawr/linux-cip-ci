@@ -186,7 +186,7 @@ configure_build () {
 # $6 - Kernel modules to be tested (optional)
 add_test_job () {
 	# Check if modules file actually exists
-	if [ -f $6 ]; then
+	if [ -f $OUTPUT_DIR/$6 ]; then
 		echo $1 $2 $3 $4 $5 $6 >> $JOBS_LIST
 	else
 		echo $1 $2 $3 $4 $5 >> $JOBS_LIST
