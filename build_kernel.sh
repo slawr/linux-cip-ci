@@ -10,7 +10,7 @@
 # https://github.com/mhiramat/linux-cross
 #
 # Script specific dependencies:
-# wget uname nproc make tar
+# wget uname nproc make tar pwd
 #
 # Parameters:
 # $1 - Architecture to build
@@ -21,13 +21,14 @@
 set -ex
 
 ################################################################################
-WORK_DIR="$CI_BUILDS_DIR/$CI_PROJECT_PATH"
+WORK_DIR=`pwd`
 GCC_VER="8.1.0"
 COMPILER_BASE_URL="https://cdn.kernel.org/pub/tools/crosstool/files/bin"
-COMPILER_INSTALL_DIR="$WORK_DIR/gcc/"
+COMPILER_INSTALL_DIR="$WORK_DIR/gcc"
 TMP_DIR="$WORK_DIR/tmp"
 MODULE_INSTALL_DIR="$TMP_DIR/modules"
 OUTPUT_DIR="$WORK_DIR/output"
+JOBS_LIST="$OUTPUT_DIR/$CI_JOB_NAME.jobs"
 ################################################################################
 CPUS=`nproc`
 HOST_ARCH=`uname -m`
@@ -105,9 +106,14 @@ build_dtbs () {
 }
 
 build_modules () {
+	# Make sure install environment is clean
+	rm -rf $TMP_DIR/modules.tar.gz
+	rm -rf $MODULE_INSTALL_DIR
+
 	make $BUILD_FLAGS modules
 	make $BUILD_FLAGS modules_install INSTALL_MOD_PATH=$MODULE_INSTALL_DIR
 
+	# Package up for distribution
 	tar -C ${MODULE_INSTALL_DIR} -czf $TMP_DIR/modules.tar.gz lib
 }
 
@@ -137,7 +143,6 @@ configure_compiler () {
 # Parameters
 # $1 - Target arch
 configure_arch () {
-
 	case "$1" in
 		"arm")
 			BUILD_ARCH="arm"
@@ -171,40 +176,78 @@ configure_build () {
 	configure_kernel $2
 }
 
+
+# Parameters
+# $1 - Version
+# $2 - Architecture
+# $3 - Kernel configuration
+# $4 - Kernel to be tested
+# $5 - Device tree to be tested
+# $6 - Kernel modules to be tested (optional)
+add_test_job () {
+	# Check if modules file actually exists
+	if [ -f $6 ]; then
+		echo $1 $2 $3 $4 $5 $6 >> $JOBS_LIST
+	else
+		echo $1 $2 $3 $4 $5 >> $JOBS_LIST
+	fi
+}
+
 copy_output () {
-	local output_dir=$OUTPUT_DIR/$KERNEL_NAME/$BUILD_ARCH/$CONFIG/
-	mkdir -p $output_dir/kernel
-	mkdir -p $output_dir/dtb
-	mkdir -p $output_dir/modules
+	local bin_dir=$KERNEL_NAME/$BUILD_ARCH/$CONFIG
+
+	mkdir -p $OUTPUT_DIR/$bin_dir/kernel
+	mkdir -p $OUTPUT_DIR/$bin_dir/dtb
+	mkdir -p $OUTPUT_DIR/$bin_dir/modules
 
 	# Kernel
-	cp arch/$BUILD_ARCH/boot/$IMAGE_TYPE $output_dir/kernel
+	cp arch/$BUILD_ARCH/boot/$IMAGE_TYPE $OUTPUT_DIR/$bin_dir/kernel
+
+	# Modules
+	if [ -f "$TMP_DIR/modules.tar.gz" ]; then
+		cp $TMP_DIR/modules.tar.gz $OUTPUT_DIR/$bin_dir/modules
+	fi
 
 	# Only copy DTBs we care about
-	# submit_tests.sh is based on there only being 1 device tree
 	case $BUILD_ARCH in
 		"arm")
 			case $CONFIG in
 				"shmobile_defconfig")
-					cp arch/arm/boot/dts/r8a7743-iwg20d-q7-dbcm-ca.dtb $output_dir/dtb
+					cp arch/arm/boot/dts/r8a7743-iwg20d-q7-dbcm-ca.dtb $OUTPUT_DIR/$bin_dir/dtb
+					add_test_job \
+						$KERNEL_NAME \
+						$BUILD_ARCH \
+						$CONFIG \
+						$bin_dir/kernel/$IMAGE_TYPE \
+						$bin_dir/dtb/r8a7743-iwg20d-q7-dbcm-ca.dtb \
+						$bin_dir/modules/modules.tar.gz
+
+					cp arch/arm/boot/dts/r8a7745-iwg22d-sodimm-dbhd-ca.dtb $OUTPUT_DIR/$bin_dir/dtb
+					add_test_job \
+						$KERNEL_NAME \
+						$BUILD_ARCH \
+						$CONFIG \
+						$bin_dir/kernel/$IMAGE_TYPE \
+						$bin_dir/dtb/r8a7745-iwg22d-sodimm-dbhd-ca.dtb \
+						$bin_dir/modules/modules.tar.gz
 					;;
 			esac
 			;;
 		"arm64")
 			case $CONFIG in
 				"defconfig")
-					cp arch/arm64/boot/dts/renesas/r8a774c0-ek874.dtb $output_dir/dtb
+					cp arch/arm64/boot/dts/renesas/r8a774c0-ek874.dtb $OUTPUT_DIR/$bin_dir/dtb
+					add_test_job \
+						$KERNEL_NAME \
+						$BUILD_ARCH \
+						$CONFIG \
+						$bin_dir/kernel/$IMAGE_TYPE \
+						$bin_dir/dtb/r8a774c0-ek874.dtb \
+						$bin_dir/modules/modules.tar.gz
 					;;
 			esac
 			;;
 	esac
-
-	# Modules
-	if [ -f "$TMP_DIR/modules.tar.gz" ]; then
-		cp $TMP_DIR/modules.tar.gz $output_dir
-		rm -rf $TMP_DIR/modules.tar.gz
-		rm -rf $MODULE_INSTALL_DIR
-	fi
 }
 
 
@@ -222,4 +265,3 @@ copy_output
 ################################################################################
 
 clean_up
-
