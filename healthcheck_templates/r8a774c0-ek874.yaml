@@ -31,27 +31,27 @@ actions:
     timeout:
       minutes: 5
     to: tftp
-    # despite this being a Debian initramfs, it is not a complete Debian rootfs, so use oe compatibility
     os: oe
     kernel:
       url: KERNEL_URL
       type: image
-    ramdisk:
-      url: https://s3-us-west-2.amazonaws.com/download.cip-project.org/ciptesting/cip-lava/rfs/initramfs_64.cpio.gz
+    nfsrootfs:
+      url: https://s3-us-west-2.amazonaws.com/download.cip-project.org/ciptesting/cip-lava/rfs/core-image-bsp-ek874.tar.gz
       compression: gz
     dtb:
       url: DTB_URL
 
 # BOOT_BLOCK
 - boot:
+    auto_login:
+      login_prompt: 'ek874 login:'
+      username: root
+    prompts:
+      - 'root@ek874'
+    method: u-boot
+    commands: nfs
     timeout:
       minutes: 5
-    method: u-boot
-    commands: ramdisk
-    prompts:
-      - 'linaro-test'
-      - 'root@debian:~#'
-      - '/ #'
 
 # TEST_BLOCK
 - test:

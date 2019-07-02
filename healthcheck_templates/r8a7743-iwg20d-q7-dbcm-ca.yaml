@@ -31,28 +31,25 @@ actions:
     timeout:
       minutes: 5
     to: tftp
-    # despite this being a Debian initramfs, it is not a complete Debian rootfs, so use oe compatibility
     os: oe
     kernel:
       url: KERNEL_URL
       type: uimage
-    ramdisk:
-      url: https://s3-us-west-2.amazonaws.com/download.cip-project.org/ciptesting/cip-lava/rfs/generic-initramfs.cpio.gz
+    nfsrootfs:
+      url: https://s3-us-west-2.amazonaws.com/download.cip-project.org/cip-core/iwg20m/core-image-minimal-iwg20m.tar.gz
       compression: gz
-      # the bootloader needs a u-boot header on the modified ramdisk
-      add-header: u-boot
     dtb:
       url: DTB_URL
 
 # BOOT_BLOCK
 - boot:
     auto_login:
-      login_prompt: '\(none\) login: '
+      login_prompt: 'ciphost login:'
       username: root
     prompts:
-      - '\(initramfs\)'
+      - 'cip-project#'
     method: u-boot
-    commands: ramdisk
+    commands: nfs
     timeout:
       minutes: 5
 
