@@ -1,4 +1,6 @@
 # linux-cip-ci
+[![pipeline status](https://gitlab.com/cip-playground/linux-cip-ci/badges/master/pipeline.svg)](https://gitlab.com/cip-playground/linux-cip-ci/commits/master)
+
 This project builds the containers and scripts used in the CI testing of the
 linux-cip Kernel.
 
