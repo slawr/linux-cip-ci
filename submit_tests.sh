@@ -6,7 +6,7 @@
 # relevant test jobs to the CIP LAVA master.
 #
 # Script specific dependencies:
-# lavacli aws pwd
+# lavacli aws pwd sed
 #
 # The following must be set in GitLab CI variables for lavacli to work:
 # $CIP_LAVA_LAB_USER
@@ -44,8 +44,7 @@ clean_up () {
 
 # Using job definition templates based on device tree names
 get_template () {
-	local machine=$(echo "$DTB_NAME" | rev | cut -f 2- -d '.' | rev)
-	TEMPLATE="$machine.yaml"
+	TEMPLATE="$TEMPLATE_DIR/$DEVICE.yaml"
 }
 
 create_job () {
@@ -55,9 +54,12 @@ create_job () {
 	local kernel_url="$AWS_URL_DOWN/$KERNEL"
 	local modules_url="$AWS_URL_DOWN/$MODULES"
 
+	INDEX="0"
 	local job_name="${VERSION}_${ARCH}_${CONFIG}_${DTB_NAME}"
-	local job_definition="$TMP_DIR/$job_name.yaml"
-	cp $TEMPLATE_DIR/$TEMPLATE $job_definition
+	local job_definition="$TMP_DIR/${INDEX}_${job_name}.yaml"
+	INDEX=$((INDEX+1))
+
+	cp $TEMPLATE $job_definition
 
 	sed -i "s|JOB_NAME|$job_name|g" $job_definition
 	if [ ! -z "$MODULES" ]; then
@@ -76,6 +78,10 @@ configure_aws () {
 
 upload_binaries () {
 	configure_aws
+
+	# Note: If there are multiple jobs in the same pipeline building the
+	# same SHA, same ARCH and same CONFIG _name_, AWS binaries will be
+	# overwritten.
 	aws s3 sync $OUTPUT_DIR/. $AWS_URL_UP --exclude jobs --acl public-read
 }
 
@@ -87,6 +93,7 @@ print_kernel_info () {
 	echo "Version: $VERSION"
 	echo "Arch: $ARCH"
 	echo "Config: $CONFIG"
+	echo "Device: $DEVICE"
 	echo "Kernel: $KERNEL_NAME"
 	echo "DTB: $DTB_NAME"
 	echo "Modules: $MODULES_NAME"
@@ -100,16 +107,27 @@ print_kernel_info () {
 # VERSION ARCH CONFIG KERNEL DEVICE_TREE MODULES
 # MODULES is optional
 find_jobs () {
-	# Search for job files
+	# Make sure there is at least one job file
+	if [ `find $OUTPUT_DIR -maxdepth 1 -name "*.jobs" -printf '.' |  wc -c` -eq 0 ]; then
+		echo "No jobs found"
+		clean_up
+		# Quit cleanly as technically there is nothing wrong, it's just
+		# that there either no builds were successful or none that
+		# wanted testing
+		exit 0
+	fi
+
+	# Process job files
 	for jobfile in $OUTPUT_DIR/*.jobs; do
-		while read version arch config kernel device_tree modules; do
+		while read version arch config device kernel device_tree modules; do
 			VERSION=$version
 			ARCH=$arch
 			CONFIG=$config
+			DEVICE=$device
 			KERNEL=$kernel
 			DTB=$device_tree
 			MODULES=$modules
-	
+
 			# Get filename from path
 			KERNEL_NAME=`echo "$KERNEL" | sed "s/.*\///"`
 			DTB_NAME=`echo "$DTB" | sed "s/.*\///"`

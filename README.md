@@ -25,8 +25,22 @@ The GitLab CI configuration then archives the relevant binaries ready for the
 test stage to pick up.
 
 **Parameters**  
-$1 - Architecture to build (arm, arm64)  
-$2 - Kernel configuration to build (must be in-tree)
+The following variables should be set in the gitlab-ci.yml job:  
+* BUILD_ARCH: The architecture to build for
+* CONFIG: The name of the configuration file to be used. Must be in defconfig
+format
+* CONFIG_LOC: Must be one of the following options:
+  * intree: Configuration is present in the linux-cip Kernel
+  * cip-kernel-configs: Configuration is present in the cip-kernel-configs
+repository: https://gitlab.com/cip-project/cip-kernel/cip-kernel-config
+  * url: Link to raw defconfig file hosted somewhere public. Should be a link
+to the directory where the config is stored, not the actual file.
+* DEVICES: A list of device-types as defined in LAVA that are to be tested. If
+no testing is required for this job, don't include DEVICES.
+* DTBS: A list of device tree blobs (including path) that are to be used in
+testing. If DEVICES is defined, exactly one DTB per device-type in DEVICES must
+be defined. If DTBS is set when DEVICES is not, all Kernel/device trees will be
+stored by GitLab in case they are required.
 
 ## test-image
 Used to build a container that includes the dependencies required for testing.
@@ -50,21 +64,40 @@ variables being set. This can be done in GitLab in `settings/ci_cd`.
 ## Example Use
 The below `.gitlab-ci.yml` file shows how linux-cip-ci can be used.
 
-**Notes**
-The below example is designed to work with a GitLab Runner using the
-gitlab-ci-cloud tool from CIP: https://gitlab.com/cip-playground/gitlab-cloud-ci
-
 ```
 variables:
   GIT_STRATEGY: clone
   GIT_DEPTH: "10"
   DOCKER_DRIVER: overlay2
 
-build_arm_shmobile_defconfig:
+build_arm_renesas_shmobile_defconfig:
   stage: build
   image: registry.gitlab.com/cip-playground/linux-cip-ci:build-latest
+  variables:
+    BUILD_ARCH: arm
+    CONFIG: renesas_shmobile_defconfig
+    CONFIG_LOC: cip-kernel-config
+    DEVICES: r8a7743-iwg20d-q7 r8a7745-iwg22d-sodimm
+    DTBS: arch/arm/boot/dts/r8a7743-iwg20d-q7-dbcm-ca.dtb arch/arm/boot/dts/r8a7745-iwg22d-sodimm-dbhd-ca.dtb
   script:
-    - /opt/build_kernel.sh arm shmobile_defconfig
+    - /opt/build_kernel.sh
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: on_success
+    paths:
+      - output
+
+build_arm64_renesas_defconfig:
+  stage: build
+  image: registry.gitlab.com/cip-playground/linux-cip-ci:build-latest
+  variables:
+    BUILD_ARCH: arm64
+    CONFIG: renesas_defconfig
+    CONFIG_LOC: cip-kernel-config
+    DEVICES: r8a774c0-ek874
+    DTBS: arch/arm64/boot/dts/renesas/r8a774c0-ek874.dtb
+  script:
+    - /opt/build_kernel.sh
   artifacts:
     name: "$CI_JOB_NAME"
     when: on_success
@@ -74,8 +107,30 @@ build_arm_shmobile_defconfig:
 build_arm64_defconfig:
   stage: build
   image: registry.gitlab.com/cip-playground/linux-cip-ci:build-latest
+  variables:
+    BUILD_ARCH: arm64
+    CONFIG: defconfig
+    CONFIG_LOC: intree
+    DEVICES: r8a774c0-ek874
+    DTBS: arch/arm64/boot/dts/renesas/r8a774c0-ek874.dtb
   script:
-    - /opt/build_kernel.sh arm64 defconfig
+    - /opt/build_kernel.sh
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: on_success
+    paths:
+      - output
+
+# Build only
+build_arm_shmobile_defconfig:
+  stage: build
+  image: registry.gitlab.com/cip-playground/linux-cip-ci:build-latest
+  variables:
+    BUILD_ARCH: arm
+    CONFIG: shmobile_defconfig
+    CONFIG_LOC: intree
+  script:
+    - /opt/build_kernel.sh
   artifacts:
     name: "$CI_JOB_NAME"
     when: on_success
