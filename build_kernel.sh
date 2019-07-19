@@ -211,10 +211,9 @@ build_kernel () {
 # TODO: Make sure docker image installs the compilers as well
 install_compiler () {
 	local ext=".tar.gz"
-	local url="https://cdn.kernel.org/pub/tools/crosstool/files/bin"
 	local gcc_file="$HOST_ARCH-gcc-$GCC_VER-nolibc-$GCC_NAME$ext"
 
-	wget -q -P $TMP_DIR/ $url/$HOST_ARCH/$GCC_VER/$gcc_file
+	wget -q -P $TMP_DIR/ $COMPILER_BASE_URL/$HOST_ARCH/$GCC_VER/$gcc_file
 	if [ $? -ne 0 ]; then
 		echo "Error: Compiler download failure"
 		clean_up
