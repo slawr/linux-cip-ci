@@ -302,18 +302,11 @@ copy_output () {
 		cp $TMP_DIR/modules.tar.gz $OUTPUT_DIR/$bin_dir/modules
 	fi
 
+	# Copy all device trees created by build config
+	mkdir -p $OUTPUT_DIR/$bin_dir/dtb
+	find . -name \*.dtb -exec cp {} $OUTPUT_DIR/$bin_dir/dtb \;
+
 	if $BUILD_ONLY; then
-		# Copy any/all device trees
-		if [ ! -z "$DTBS" ]; then
-			# Convert $DTBS into an array
-			local dtbs=($DTBS)
-			mkdir -p $OUTPUT_DIR/$bin_dir/dtb
-
-			for i in "${!dtbs[@]}"; do
-				cp ${dtbs[$i]} $OUTPUT_DIR/$bin_dir/dtb
-			done
-		fi
-
 		# Return successful as we're happy to build without testing.
 		return 0
 	fi
@@ -345,8 +338,6 @@ copy_output () {
 			return 1
 		fi
 
-		mkdir -p $OUTPUT_DIR/$bin_dir/dtb
-
 		# Convert $DTBS into an array
 		dtbs=($DTBS)
 
@@ -362,16 +353,13 @@ copy_output () {
 
 		# Add job for each device/dtb combo
 		for i in "${!dtbs[@]}"; do
-			local dtb_name=`echo "${dtbs[$i]}" | sed "s/.*\///"`
-			cp ${dtbs[$i]} $OUTPUT_DIR/$bin_dir/dtb
-
 			add_test_job \
 				$KERNEL_NAME \
 				$BUILD_ARCH \
 				$CONFIG \
 				${devices[$i]} \
 				$bin_dir/kernel/$IMAGE_TYPE \
-				$bin_dir/dtb/$dtb_name \
+				$bin_dir/dtb/${dtbs[$i]} \
 				$bin_dir/modules/modules.tar.gz
 		done
 	fi

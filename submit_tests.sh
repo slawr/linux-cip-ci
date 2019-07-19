@@ -119,8 +119,8 @@ find_jobs () {
 		echo "No jobs found"
 		clean_up
 		# Quit cleanly as technically there is nothing wrong, it's just
-		# that there either no builds were successful or none that
-		# wanted testing
+		# that either no builds were successful or none that wanted
+		# testing.
 		exit 0
 	fi
 
