@@ -1,5 +1,7 @@
 # linux-cip-ci
-[![pipeline status](https://gitlab.com/cip-playground/linux-cip-ci/badges/master/pipeline.svg)](https://gitlab.com/cip-playground/linux-cip-ci/commits/master)
+[![pipeline status]
+(https://gitlab.com/cip-playground/linux-cip-ci/badges/master/pipeline.svg)]
+(https://gitlab.com/cip-playground/linux-cip-ci/commits/master)
 
 Current DOCKER_IMAGE_TAG version: v1
 
@@ -33,16 +35,14 @@ The following variables should be set in the gitlab-ci.yml job:
 .config or defconfig format.
 * `CONFIG_LOC`: Must be one of the following options:
   * `intree`: Configuration is present in the linux-cip Kernel.
-  * `cip-kernel-configs`: Configuration is present in the cip-kernel-configs
-repository: https://gitlab.com/cip-project/cip-kernel/cip-kernel-config
+  * `cip-kernel-configs`: Configuration is present in the [cip-kernel-configs]
+(https://gitlab.com/cip-project/cip-kernel/cip-kernel-config) repository.
   * `url`: Link to raw defconfig file hosted somewhere public. Should be a link
 to the directory where the config is stored, not the actual file.
 * `DEVICES`: A list of device-types as defined in LAVA that are to be tested.
 This must be set if testing is required.
-* `DTBS`: A list of device tree blobs (including path) that are to be used in
-testing. If `DEVICES` is defined, exactly one DTB per device-type in `DEVICES`
-must be defined. If `DTBS` is set when `DEVICES` is not, all Kernel/device trees
-will be stored by GitLab in case they are required.
+* `DTBS`: A list of device tree blobs (including extension) that are to be used
+in testing. Exactly one `DTB` per device-type in `DEVICES` must be defined.
 * `BUILD_ONLY`: Set to 'true' if don't want to test this configuration, only
 build. If this is not set a default of 'false' is used.
 
@@ -87,9 +87,9 @@ variables:
   GIT_STRATEGY: clone
   GIT_DEPTH: "10"
   DOCKER_DRIVER: overlay2
-  DOCKER_IMAGE_TAG: v1
+  DOCKER_IMAGE_TAG: v2
 
-build_arm_renesas_shmobile_defconfig:
+arm_renesas_shmobile_defconfig:
   stage: build
   image: registry.gitlab.com/cip-playground/linux-cip-ci:build-$DOCKER_IMAGE_TAG
   variables:
@@ -97,7 +97,7 @@ build_arm_renesas_shmobile_defconfig:
     CONFIG: renesas_shmobile_defconfig
     CONFIG_LOC: cip-kernel-config
     DEVICES: r8a7743-iwg20d-q7 r8a7745-iwg22d-sodimm
-    DTBS: arch/arm/boot/dts/r8a7743-iwg20d-q7-dbcm-ca.dtb arch/arm/boot/dts/r8a7745-iwg22d-sodimm-dbhd-ca.dtb
+    DTBS: r8a7743-iwg20d-q7-dbcm-ca.dtb r8a7745-iwg22d-sodimm-dbhd-ca.dtb
   script:
     - /opt/build_kernel.sh
   artifacts:
@@ -106,7 +106,7 @@ build_arm_renesas_shmobile_defconfig:
     paths:
       - output
 
-build_arm64_renesas_defconfig:
+arm64_renesas_defconfig:
   stage: build
   image: registry.gitlab.com/cip-playground/linux-cip-ci:build-$DOCKER_IMAGE_TAG
   variables:
@@ -114,7 +114,7 @@ build_arm64_renesas_defconfig:
     CONFIG: renesas_defconfig
     CONFIG_LOC: cip-kernel-config
     DEVICES: r8a774c0-ek874
-    DTBS: arch/arm64/boot/dts/renesas/r8a774c0-ek874.dtb
+    DTBS: r8a774c0-ek874.dtb
   script:
     - /opt/build_kernel.sh
   artifacts:
@@ -123,7 +123,7 @@ build_arm64_renesas_defconfig:
     paths:
       - output
 
-build_arm64_defconfig:
+arm64_defconfig:
   stage: build
   image: registry.gitlab.com/cip-playground/linux-cip-ci:build-$DOCKER_IMAGE_TAG
   variables:
@@ -131,7 +131,7 @@ build_arm64_defconfig:
     CONFIG: defconfig
     CONFIG_LOC: intree
     DEVICES: r8a774c0-ek874
-    DTBS: arch/arm64/boot/dts/renesas/r8a774c0-ek874.dtb
+    DTBS: r8a774c0-ek874.dtb
   script:
     - /opt/build_kernel.sh
   artifacts:
@@ -140,8 +140,7 @@ build_arm64_defconfig:
     paths:
       - output
 
-# Build only
-build_x86_siemens_server_defconfig:
+x86_siemens_server_defconfig:
   stage: build
   image: registry.gitlab.com/cip-playground/linux-cip-ci:build-$DOCKER_IMAGE_TAG
   variables:
@@ -157,28 +156,9 @@ build_x86_siemens_server_defconfig:
     paths:
       - output
 
-# Build only
-build_arm_shmobile_defconfig:
-  stage: build
-  image: registry.gitlab.com/cip-playground/linux-cip-ci:build-$DOCKER_IMAGE_TAG
-  variables:
-    BUILD_ARCH: arm
-    CONFIG: shmobile_defconfig
-    CONFIG_LOC: intree
-    DTBS: arch/arm/boot/dts/r8a7743-iwg20d-q7-dbcm-ca.dtb arch/arm/boot/dts/r8a7745-iwg22d-sodimm-dbhd-ca.dtb
-    BUILD_ONLY: "true"
-
-  script:
-    - /opt/build_kernel.sh
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: on_success
-    paths:
-      - output
-
 run_tests:
   stage: test
-  image: registry.gitlab.com/cip-playground/linux-cip-ci:test-$DOCKER_IMAGE_TAG
+  image: registry.gitlab.com/cip-playground/linux-cip-ci:test-v1
   variables:
     GIT_STRATEGY: none
     TEST_TIMEOUT: 30
