@@ -78,7 +78,7 @@ variables:
 
 build_arm_renesas_shmobile_defconfig:
   stage: build
-  image: registry.gitlab.com/cip-playground/linux-cip-ci:build-latest
+  image: registry.gitlab.com/cip-playground/linux-cip-ci:build-v1
   variables:
     BUILD_ARCH: arm
     CONFIG: renesas_shmobile_defconfig
@@ -95,7 +95,7 @@ build_arm_renesas_shmobile_defconfig:
 
 build_arm64_renesas_defconfig:
   stage: build
-  image: registry.gitlab.com/cip-playground/linux-cip-ci:build-latest
+  image: registry.gitlab.com/cip-playground/linux-cip-ci:build-v1
   variables:
     BUILD_ARCH: arm64
     CONFIG: renesas_defconfig
@@ -112,7 +112,7 @@ build_arm64_renesas_defconfig:
 
 build_arm64_defconfig:
   stage: build
-  image: registry.gitlab.com/cip-playground/linux-cip-ci:build-latest
+  image: registry.gitlab.com/cip-playground/linux-cip-ci:build-v1
   variables:
     BUILD_ARCH: arm64
     CONFIG: defconfig
@@ -130,7 +130,7 @@ build_arm64_defconfig:
 # Build only
 build_arm_shmobile_defconfig:
   stage: build
-  image: registry.gitlab.com/cip-playground/linux-cip-ci:build-latest
+  image: registry.gitlab.com/cip-playground/linux-cip-ci:build-v1
   variables:
     BUILD_ARCH: arm
     CONFIG: shmobile_defconfig
@@ -145,7 +145,7 @@ build_arm_shmobile_defconfig:
 
 run_tests:
   stage: test
-  image: registry.gitlab.com/cip-playground/linux-cip-ci:test-latest
+  image: registry.gitlab.com/cip-playground/linux-cip-ci:test-v1
   variables:
     GIT_STRATEGY: none
     TEST_TIMEOUT: 30
