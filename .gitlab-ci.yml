@@ -1,11 +1,9 @@
-image: docker:stable
-
-services:
-  - docker:dind
+image:
+  name: gcr.io/kaniko-project/executor:debug
+  entrypoint: [""]
 
 variables:
   DOCKER_DRIVER: overlay2
-  DOCKER_HOST: tcp://localhost:2375
   DOCKER_IMAGE_TAG: v1
 
 stages:
@@ -13,16 +11,12 @@ stages:
   - notify
 
 before_script:
-  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
 
 build-image-master:
   stage: build
   script:
-    - docker pull $CI_REGISTRY_IMAGE:build-latest || true
-    - docker build --cache-from $CI_REGISTRY_IMAGE:build-latest --tag $CI_REGISTRY_IMAGE:build-$CI_COMMIT_SHA --tag $CI_REGISTRY_IMAGE:build-$DOCKER_IMAGE_TAG --tag $CI_REGISTRY_IMAGE:build-latest -f build.Dockerfile .
-    - docker push $CI_REGISTRY_IMAGE:build-$CI_COMMIT_SHA
-    - docker push $CI_REGISTRY_IMAGE:build-$DOCKER_IMAGE_TAG
-    - docker push $CI_REGISTRY_IMAGE:build-latest
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/build.Dockerfile --destination $CI_REGISTRY_IMAGE:build-$CI_COMMIT_REF_SHA --destination $CI_REGISTRY_IMAGE:build-$DOCKER_IMAGE_TAG --destination $CI_REGISTRY_IMAGE:build-latest
   retry: 1
   only:
     - master
@@ -30,9 +24,7 @@ build-image-master:
 build-image:
   stage: build
   script:
-    - docker pull $CI_REGISTRY_IMAGE:build-$CI_COMMIT_REF_SLUG || true
-    - docker build --cache-from $CI_REGISTRY_IMAGE:build-$CI_COMMIT_REF_SLUG --tag $CI_REGISTRY_IMAGE:build-$CI_COMMIT_REF_SLUG -f build.Dockerfile .
-    - docker push $CI_REGISTRY_IMAGE:build-$CI_COMMIT_REF_SLUG
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/build.Dockerfile --destination $CI_REGISTRY_IMAGE:build-$CI_COMMIT_REF_SLUG
   retry: 1
   except:
     - master
@@ -40,11 +32,7 @@ build-image:
 test-image-master:
   stage: build
   script:
-    - docker pull $CI_REGISTRY_IMAGE:test-latest || true
-    - docker build --cache-from $CI_REGISTRY_IMAGE:test-latest --tag $CI_REGISTRY_IMAGE:test-$CI_COMMIT_SHA --tag $CI_REGISTRY_IMAGE:test-$DOCKER_IMAGE_TAG --tag $CI_REGISTRY_IMAGE:test-latest -f test.Dockerfile .
-    - docker push $CI_REGISTRY_IMAGE:test-$CI_COMMIT_SHA
-    - docker push $CI_REGISTRY_IMAGE:test-$DOCKER_IMAGE_TAG
-    - docker push $CI_REGISTRY_IMAGE:test-latest
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/test.Dockerfile --destination $CI_REGISTRY_IMAGE:test-$CI_COMMIT_REF_SHA --destination $CI_REGISTRY_IMAGE:test-$DOCKER_IMAGE_TAG --destination $CI_REGISTRY_IMAGE:test-latest
   retry: 1
   only:
     - master
@@ -52,9 +40,7 @@ test-image-master:
 test-image:
   stage: build
   script:
-    - docker pull $CI_REGISTRY_IMAGE:test-$CI_COMMIT_REF_SLUG || true
-    - docker build --cache-from $CI_REGISTRY_IMAGE:test-$CI_COMMIT_REF_SLUG --tag $CI_REGISTRY_IMAGE:test-$CI_COMMIT_REF_SLUG -f test.Dockerfile .
-    - docker push $CI_REGISTRY_IMAGE:test-$CI_COMMIT_REF_SLUG
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/test.Dockerfile --destination $CI_REGISTRY_IMAGE:test-$CI_COMMIT_REF_SLUG
   retry: 1
   except:
     - master
@@ -71,4 +57,3 @@ notify:
   start_in: 10 minutes
   only:
     - master
-
