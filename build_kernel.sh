@@ -139,12 +139,12 @@ get_kernel_name () {
 	local version=`make kernelversion`
 
 	# Check for local version
-	# WARNING: This will only work if there is one file named localversion*
-	local localversionfile=`find . -maxdepth 1 -name localversion*`
-	if [ ! -z "$localversionfile" ]; then
-		local localversion=`cat $localversionfile`
-		version=$version$localversion
-	fi
+	for localversionfile in localversion*; do
+		if [ -f "$localversionfile" ]; then
+			local localversion=`cat $localversionfile`
+			version=${version}${localversion}
+		fi
+	done
 	version=${version}_${sha}
 
 	# Define Kernel image name
