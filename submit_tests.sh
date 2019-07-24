@@ -19,9 +19,8 @@
 # Other global variables
 # $TEST_TIMEOUT: Length of time in minutes to wait for test completion. If
 #                unset a default of 30 minutes is used.
-#
-# Parameters:
-# None
+# $SUBMIT_ONLY: Set to 'true' if you don't want to wait to see if submitted LAVA
+#               jobs complete. If this is not set a default of 'false' is used.
 #
 ################################################################################
 
@@ -37,6 +36,7 @@ AWS_URL_UP="s3://download.cip-project.org/ciptesting/ci"
 AWS_URL_DOWN="https://s3-us-west-2.amazonaws.com/download.cip-project.org/ciptesting/ci"
 LAVACLI_ARGS="--uri https://$CIP_LAVA_LAB_USER:$CIP_LAVA_LAB_TOKEN@lava.ciplatform.org/RPC2"
 if [ -z "$TEST_TIMEOUT" ]; then TEST_TIMEOUT=30; fi
+if [ -z "$SUBMIT_ONLY" ]; then SUBMIT_ONLY=false; fi
 ################################################################################
 
 set_up () {
@@ -252,8 +252,8 @@ set_up
 find_jobs
 upload_binaries
 submit_jobs
-check_status
-
-# TODO: Check to see if submitted jobs were actually successful.
+if ! $SUBMIT_ONLY; then
+	check_status
+fi
 
 clean_up
