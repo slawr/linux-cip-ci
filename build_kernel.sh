@@ -12,10 +12,6 @@
 # Script specific dependencies:
 # wget uname nproc make tar pwd sed
 #
-# Parameters:
-# $1 - Architecture to build
-# $2 - Kernel configuration to build
-#
 ################################################################################
 
 set -ex
@@ -198,8 +194,6 @@ configure_compiler () {
 	BUILD_FLAGS="-j$CPUS ARCH=$BUILD_ARCH CROSS_COMPILE=${compiler_exec%gcc}"
 }
 
-# Parameters
-# $1 - Target arch
 configure_arch () {
 	case "$BUILD_ARCH" in
 		"arm")
