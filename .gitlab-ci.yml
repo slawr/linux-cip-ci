@@ -44,16 +44,3 @@ test-image:
   retry: 1
   except:
     - master
-
-notify:
-  stage: notify
-  image: appropriate/curl
-  before_script: []
-  script:
-    - "curl -X POST -F token=$LINUX_CIP_BUILD_TRIGGER -F ref=chris/linux-4.4.y-cip-ci-test https://gitlab.com/api/v4/projects/2678032/trigger/pipeline"
-    - "curl -X POST -F token=$LINUX_CIP_BUILD_TRIGGER -F ref=chris/linux-4.19.y-cip-ci-test https://gitlab.com/api/v4/projects/2678032/trigger/pipeline"
-  retry: 1
-  when: delayed
-  start_in: 10 minutes
-  only:
-    - master
