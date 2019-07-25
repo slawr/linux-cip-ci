@@ -20,6 +20,7 @@ visibility: public
 notify:
   criteria:
     status: finished
+  verbosity: verbose
   recipients:
   - to:
      method: email
