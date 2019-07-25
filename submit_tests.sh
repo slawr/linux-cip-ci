@@ -6,7 +6,7 @@
 # relevant test jobs to the CIP LAVA master.
 #
 # Script specific dependencies:
-# lavacli aws pwd sed
+# lavacli aws pwd sed date
 #
 # The following must be set in GitLab CI variables for lavacli to work:
 # $CIP_LAVA_LAB_USER
@@ -16,12 +16,15 @@
 # $CIP_CI_AWS_ID
 # $CIP_CI_AWS_KEY
 #
-# Parameters:
-# None
+# Other global variables
+# $TEST_TIMEOUT: Length of time in minutes to wait for test completion. If
+#                unset a default of 30 minutes is used.
+# $SUBMIT_ONLY: Set to 'true' if you don't want to wait to see if submitted LAVA
+#               jobs complete. If this is not set a default of 'false' is used.
 #
 ################################################################################
 
-set -ex
+set -e
 
 ################################################################################
 WORK_DIR=`pwd`
@@ -32,6 +35,8 @@ TEMPLATE_DIR="/opt/healthcheck_templates"
 AWS_URL_UP="s3://download.cip-project.org/ciptesting/ci"
 AWS_URL_DOWN="https://s3-us-west-2.amazonaws.com/download.cip-project.org/ciptesting/ci"
 LAVACLI_ARGS="--uri https://$CIP_LAVA_LAB_USER:$CIP_LAVA_LAB_TOKEN@lava.ciplatform.org/RPC2"
+if [ -z "$TEST_TIMEOUT" ]; then TEST_TIMEOUT=30; fi
+if [ -z "$SUBMIT_ONLY" ]; then SUBMIT_ONLY=false; fi
 ################################################################################
 
 set_up () {
@@ -86,8 +91,6 @@ upload_binaries () {
 }
 
 print_kernel_info () {
-	set +x
-
 	echo "Job Found"
 	echo "----------"
 	echo "Version: $VERSION"
@@ -98,8 +101,6 @@ print_kernel_info () {
 	echo "DTB: $DTB_NAME"
 	echo "Modules: $MODULES_NAME"
 	echo "----------"
-
-	set -x
 }
 
 # JOBS_FILE should be structured with space separated values as below, one job
@@ -146,7 +147,7 @@ submit_job() {
 	if [ -f $1 ]; then
 		echo "Submitting $1 to LAVA master..."
 		# Catch error that occurs if invalid yaml file is submitted
-		ret=`lavacli $LAVACLI_ARGS jobs submit $1` || ERROR=1
+		local ret=`lavacli $LAVACLI_ARGS jobs submit $1` || error=true
 
 		if [[ $ret != [0-9]* ]]
 		then
@@ -154,6 +155,8 @@ submit_job() {
 			echo ${ret}
 		else
 			echo "Job submitted successfully as #${ret}."
+			STATUS[${ret}]="Submitted"
+			JOBS+=(${ret})
 		fi
 	fi
 }
@@ -165,6 +168,83 @@ submit_jobs () {
 	done
 }
 
+check_if_all_finished() {
+        for i in "${JOBS[@]}"
+        do
+                if [ ${STATUS[$i]} != "Finished" ]; then
+                        return 1
+                fi
+        done
+        return 0
+}
+
+check_status () {
+	# Current time + timeout time
+	local end_time=`date +%s -d "+ $TEST_TIMEOUT min"`
+	local error=false
+
+	if [ ${#JOBS[@]} -ne 0 ]
+	then
+		echo "Current job status:"
+		for i in "${JOBS[@]}"; do
+			echo "Job #$i: ${STATUS[$i]}"
+		done
+
+		while true
+		do
+			# Get latest status
+			for i in "${JOBS[@]}"
+			do
+				if [ ${STATUS[$i]} != "Finished" ]
+				then
+					local ret=`lavacli $LAVACLI_ARGS jobs show $i | grep state | cut -d ":" -f 2 | awk '{$1=$1};1'`
+
+					if [ ${STATUS[$i]} != $ret ]; then
+						echo "Job #$i: $ret"
+					fi
+					STATUS[$i]=$ret
+				fi
+			done
+
+			if check_if_all_finished; then
+				break
+			fi
+
+			# Check timeout
+			local now=$(date +%s)
+			if [ $now -ge $end_time ]; then
+				echo "Timed out waiting for test jobs to complete"
+				error=true
+				break
+			fi
+
+			# Small wait to avoid spamming the server too hard
+			sleep 10
+		done
+
+		if check_if_all_finished; then
+			# Print job outcome
+			for i in "${JOBS[@]}"
+			do
+				local ret=`lavacli $LAVACLI_ARGS jobs show $i | grep Health | cut -d ":" -f 2 | awk '{$1=$1};1'`
+				echo "Job #$i completed. Job health: $ret"
+
+				if [ ${ret} != "Complete" ]; then
+					error=true
+				fi
+			done
+		fi
+	fi
+
+	if $error; then
+		echo "Errors during testing"
+		clean_up
+		exit 1
+	fi
+
+	echo "All testing completed"
+}
+
 
 trap clean_up SIGHUP SIGINT SIGTERM
 set_up
@@ -172,7 +252,8 @@ set_up
 find_jobs
 upload_binaries
 submit_jobs
-
-# TODO: Check to see if submitted jobs were actually successful.
+if ! $SUBMIT_ONLY; then
+	check_status
+fi
 
 clean_up

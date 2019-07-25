@@ -12,10 +12,6 @@
 # Script specific dependencies:
 # wget uname nproc make tar pwd sed
 #
-# Parameters:
-# $1 - Architecture to build
-# $2 - Kernel configuration to build
-#
 ################################################################################
 
 set -ex
@@ -139,12 +135,12 @@ get_kernel_name () {
 	local version=`make kernelversion`
 
 	# Check for local version
-	# WARNING: This will only work if there is one file named localversion*
-	local localversionfile=`find . -maxdepth 1 -name localversion*`
-	if [ ! -z "$localversionfile" ]; then
-		local localversion=`cat $localversionfile`
-		version=$version$localversion
-	fi
+	for localversionfile in localversion*; do
+		if [ -f "$localversionfile" ]; then
+			local localversion=`cat $localversionfile`
+			version=${version}${localversion}
+		fi
+	done
 	version=${version}_${sha}
 
 	# Define Kernel image name
@@ -198,8 +194,6 @@ configure_compiler () {
 	BUILD_FLAGS="-j$CPUS ARCH=$BUILD_ARCH CROSS_COMPILE=${compiler_exec%gcc}"
 }
 
-# Parameters
-# $1 - Target arch
 configure_arch () {
 	case "$BUILD_ARCH" in
 		"arm")

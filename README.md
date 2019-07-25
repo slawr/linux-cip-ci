@@ -61,6 +61,12 @@ variables being set. This can be done in GitLab in `settings/ci_cd`.
 * CIP_LAVA_LAB_USER
 * CIP_LAVA_LAB_TOKEN
 
+**Parameters**  
+* TEST_TIMEOUT: Length of time in minutes to wait for test completion. If unset
+a default of 30 minutes is used.
+* SUBMIT_ONLY: Set to 'true' if you don't want to wait to see if submitted LAVA
+jobs complete. If this is not set a default of 'false' is used.
+
 ## Example Use
 The below `.gitlab-ci.yml` file shows how linux-cip-ci can be used.
 
@@ -140,6 +146,9 @@ build_arm_shmobile_defconfig:
 run_tests:
   stage: test
   image: registry.gitlab.com/cip-playground/linux-cip-ci:test-latest
+  variables:
+    GIT_STRATEGY: none
+    TEST_TIMEOUT: 30
   when: always
   before_script: []
   script:
