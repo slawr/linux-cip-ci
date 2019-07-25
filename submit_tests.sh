@@ -47,7 +47,6 @@ clean_up () {
 	rm -rf $TMP_DIR
 }
 
-# Using job definition templates based on device tree names
 get_template () {
 	TEMPLATE="$TEMPLATE_DIR/$DEVICE.yaml"
 }
@@ -60,7 +59,12 @@ create_job () {
 	local modules_url="$AWS_URL_DOWN/$MODULES"
 
 	INDEX="0"
-	local job_name="${VERSION}_${ARCH}_${CONFIG}_${DTB_NAME}"
+	if [ $ARCH == "x86" ]; then
+		local job_name="${VERSION}_${ARCH}_${CONFIG}"
+	else
+		local job_name="${VERSION}_${ARCH}_${CONFIG}_${DTB_NAME}"
+	fi
+
 	local job_definition="$TMP_DIR/${INDEX}_${job_name}.yaml"
 	INDEX=$((INDEX+1))
 
@@ -70,7 +74,9 @@ create_job () {
 	if [ ! -z "$MODULES" ]; then
 		sed -i "/DTB_URL/ a \    modules:\n      url: $modules_url\n      compression: gz" $job_definition
 	fi
-	sed -i "s|DTB_URL|$dtb_url|g" $job_definition
+	if [ $ARCH != "x86" ]; then
+		sed -i "s|DTB_URL|$dtb_url|g" $job_definition
+	fi
 	sed -i "s|KERNEL_URL|$kernel_url|g" $job_definition
 }
 

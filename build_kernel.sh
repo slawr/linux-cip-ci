@@ -28,6 +28,7 @@ JOBS_LIST="$OUTPUT_DIR/$CI_JOB_NAME.jobs"
 ################################################################################
 CPUS=`nproc`
 HOST_ARCH=`uname -m`
+if [ -z "$BUILD_ONLY" ]; then BUILD_ONLY=false; fi
 ################################################################################
 
 set_up () {
@@ -147,18 +148,6 @@ get_kernel_name () {
 	KERNEL_NAME=$IMAGE_TYPE_$CONFIG_$version
 }
 
-build_kernel () {
-	make $BUILD_FLAGS $IMAGE_TYPE
-
-	if grep -qc "CONFIG_MODULES=y" .config; then
-		build_modules
-	fi
-}
-
-build_dtbs () {
-	make $BUILD_FLAGS dtbs
-}
-
 build_modules () {
 	# Make sure install environment is clean
 	rm -rf $TMP_DIR/modules.tar.gz
@@ -169,6 +158,22 @@ build_modules () {
 
 	# Package up for distribution
 	tar -C ${MODULE_INSTALL_DIR} -czf $TMP_DIR/modules.tar.gz lib
+}
+
+build_dtbs () {
+	make $BUILD_FLAGS dtbs
+}
+
+build_kernel () {
+	make $BUILD_FLAGS $IMAGE_TYPE
+
+	if grep -qc "CONFIG_MODULES=y" .config; then
+		build_modules
+	fi
+
+	if $BUILD_DTBS; then
+		build_dtbs
+	fi
 }
 
 # TODO: Make sure docker image installs the compilers as well
@@ -199,10 +204,17 @@ configure_arch () {
 		"arm")
 			GCC_NAME="arm-linux-gnueabi"
 			IMAGE_TYPE="zImage"
+			BUILD_DTBS=true
 			;;
 		"arm64")
 			GCC_NAME="aarch64-linux"
 			IMAGE_TYPE="Image"
+			BUILD_DTBS=true
+			;;
+		"x86")
+			GCC_NAME="i386-linux"
+			IMAGE_TYPE="bzImage"
+			BUILD_DTBS=false
 			;;
 		"")
 			echo "Error: No target architecture provided"
@@ -231,7 +243,7 @@ configure_build () {
 # $4 - Device to be tested (device-type as defined in LAVA)
 # $5 - Kernel to be tested
 # $6 - Device tree to be tested
-# $7 - Kernel modules to be tested (optional)
+# $7 - Kernel modules to be tested
 add_test_job () {
 	# Check if modules file actually exists
 	if [ -f $OUTPUT_DIR/$7 ]; then
@@ -243,35 +255,12 @@ add_test_job () {
 
 # Note: If there are multiple jobs in the same pipeline building the same SHA,
 # same ARCH and same CONFIG _name_, AWS binaries will be overwritten by
-# submit_test.sh.
+# submit_tests.sh.
 copy_output () {
 	local bin_dir=$KERNEL_NAME/$BUILD_ARCH/$CONFIG
-	local submit_jobs=true
-
-	if [ -z "$DTBS" ]; then
-		# We can't submit test jobs without knowing what device tree to
-		# use. However, if we got to this point the build was still
-		# successful so return a positive result.
-		return 0
-	else
-		# Convert $DTBS into an array
-		dtbs=($DTBS)
-	fi
-
-	if [ -z "$DEVICES" ]; then
-		# We are happy to build without testing. Will add binaries to
-		# artifacts anyway just in case they are needed.
-		echo "No devices defined, so assuming no testing is required"
-		submit_jobs=false
-	else
-		# Convert $DEVICES into an array
-		devices=($DEVICES)
-	fi
-
-	mkdir -p $OUTPUT_DIR/$bin_dir/kernel
-	mkdir -p $OUTPUT_DIR/$bin_dir/dtb
 
 	# Kernel
+	mkdir -p $OUTPUT_DIR/$bin_dir/kernel
 	cp arch/$BUILD_ARCH/boot/$IMAGE_TYPE $OUTPUT_DIR/$bin_dir/kernel
 
 	# TODO: Copy Kernel configuration
@@ -282,19 +271,69 @@ copy_output () {
 		cp $TMP_DIR/modules.tar.gz $OUTPUT_DIR/$bin_dir/modules
 	fi
 
-	# Check there is a dtb for each defined device
-	if $submit_jobs && [ "${#devices[@]}" -ne "${#dtbs[@]}" ]; then
-		echo "Number of defined devices is not equal to the number of defined device trees."
-		clean_up
-		exit 1
+	if $BUILD_ONLY; then
+		# Copy any/all device trees
+		if [ ! -z "$DTBS" ]; then
+			# Convert $DTBS into an array
+			local dtbs=($DTBS)
+			mkdir -p $OUTPUT_DIR/$bin_dir/dtb
+
+			for i in "${!dtbs[@]}"; do
+				cp ${dtbs[$i]} $OUTPUT_DIR/$bin_dir/dtb
+			done
+		fi
+
+		# Return successful as we're happy to build without testing.
+		return 0
 	fi
 
-	# Add job for each device/dtb combo
-	for i in "${!dtbs[@]}"; do
-		local dtb_name=`echo "${dtbs[$i]}" | sed "s/.*\///"`
-		cp ${dtbs[$i]} $OUTPUT_DIR/$bin_dir/dtb
+	if [ $BUILD_ARCH == "x86" ]; then
+		# Convert $DEVICES into an array
+		devices=($DEVICES)
 
-		if $submit_jobs; then
+		# Add job for each device
+		for i in "${!devices[@]}"; do
+			add_test_job \
+				$KERNEL_NAME \
+				$BUILD_ARCH \
+				$CONFIG \
+				${devices[$i]} \
+				$bin_dir/kernel/$IMAGE_TYPE \
+				"N/A" \
+				$bin_dir/modules/modules.tar.gz
+		done
+	else
+		# Device tree
+		if [ -z "$DTBS" ]; then
+			echo "No device trees defined, so cannot test."
+			return 1
+		fi
+
+		if [ -z "$DEVICES" ]; then
+			echo "No devices defined, so cannot test."
+			return 1
+		fi
+
+		mkdir -p $OUTPUT_DIR/$bin_dir/dtb
+
+		# Convert $DTBS into an array
+		dtbs=($DTBS)
+
+		# Convert $DEVICES into an array
+		devices=($DEVICES)
+
+		# Check there is a dtb for each defined device
+		if [ "${#devices[@]}" -ne "${#dtbs[@]}" ]; then
+			echo "Number of devices does not equal the number of dtbs."
+			clean_up
+			exit 1
+		fi
+
+		# Add job for each device/dtb combo
+		for i in "${!dtbs[@]}"; do
+			local dtb_name=`echo "${dtbs[$i]}" | sed "s/.*\///"`
+			cp ${dtbs[$i]} $OUTPUT_DIR/$bin_dir/dtb
+
 			add_test_job \
 				$KERNEL_NAME \
 				$BUILD_ARCH \
@@ -303,8 +342,8 @@ copy_output () {
 				$bin_dir/kernel/$IMAGE_TYPE \
 				$bin_dir/dtb/$dtb_name \
 				$bin_dir/modules/modules.tar.gz
-		fi
-	done
+		done
+	fi
 }
 
 
@@ -317,7 +356,6 @@ set_up
 # Run the below for each configuration you want to build
 configure_build
 build_kernel
-build_dtbs
 copy_output
 ################################################################################
 

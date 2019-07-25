@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update \
 && apt-get install -y --no-install-recommends apt-utils git build-essential \
 libncurses-dev bison flex libssl-dev libelf-dev bc u-boot-tools wget kmod \
-ca-certificates \
+ca-certificates libssl-dev \
 && rm -rf /var/lib/apt/lists/*
 
 # Clone cip-kernel-config repository

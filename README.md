@@ -56,15 +56,15 @@ then creates LAVA test jobs as required and submits them to the CIP LAVA master.
 **Prerequisites**  
 The `submit_tests.sh` script relies on the following secret environment
 variables being set. This can be done in GitLab in `settings/ci_cd`.
-* CIP_CI_AWS_ID
-* CIP_CI_AWS_KEY
-* CIP_LAVA_LAB_USER
-* CIP_LAVA_LAB_TOKEN
+* `CIP_CI_AWS_ID`
+* `CIP_CI_AWS_KEY`
+* `CIP_LAVA_LAB_USER`
+* `CIP_LAVA_LAB_TOKEN`
 
 **Parameters**  
-* TEST_TIMEOUT: Length of time in minutes to wait for test completion. If unset
-a default of 30 minutes is used.
-* SUBMIT_ONLY: Set to 'true' if you don't want to wait to see if submitted LAVA
+* `TEST_TIMEOUT`: Length of time in minutes to wait for test completion. If
+unset a default of 30 minutes is used.
+* `SUBMIT_ONLY`: Set to 'true' if you don't want to wait to see if submitted LAVA
 jobs complete. If this is not set a default of 'false' is used.
 
 ## Example Use
@@ -128,6 +128,23 @@ build_arm64_defconfig:
       - output
 
 # Build only
+build_x86_siemens_server_defconfig:
+  stage: build
+  image: registry.gitlab.com/cip-playground/linux-cip-ci:build-v1
+  variables:
+    BUILD_ARCH: x86
+    CONFIG: siemens_server_defconfig
+    CONFIG_LOC: cip-kernel-config
+    BUILD_ONLY: "true"
+  script:
+    - /opt/build_kernel.sh
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: on_success
+    paths:
+      - output
+
+# Build only
 build_arm_shmobile_defconfig:
   stage: build
   image: registry.gitlab.com/cip-playground/linux-cip-ci:build-v1
@@ -135,6 +152,9 @@ build_arm_shmobile_defconfig:
     BUILD_ARCH: arm
     CONFIG: shmobile_defconfig
     CONFIG_LOC: intree
+    DTBS: arch/arm/boot/dts/r8a7743-iwg20d-q7-dbcm-ca.dtb arch/arm/boot/dts/r8a7745-iwg22d-sodimm-dbhd-ca.dtb
+    BUILD_ONLY: "true"
+
   script:
     - /opt/build_kernel.sh
   artifacts:
