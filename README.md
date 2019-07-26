@@ -1,9 +1,7 @@
 # linux-cip-ci
-[![pipeline status]
-(https://gitlab.com/cip-playground/linux-cip-ci/badges/master/pipeline.svg)]
-(https://gitlab.com/cip-playground/linux-cip-ci/commits/master)
+[![pipeline status](https://gitlab.com/cip-playground/linux-cip-ci/badges/master/pipeline.svg)](https://gitlab.com/cip-playground/linux-cip-ci/commits/master)
 
-Current DOCKER_IMAGE_TAG version: v1
+Current DOCKER_IMAGE_TAG version: v2
 
 This project builds the containers and scripts used in the CI testing of the
 linux-cip Kernel.
@@ -12,10 +10,7 @@ There are two docker containers, "build-image" and "test-image". You can guess
 what they are for.
 
 ## build-image
-Docker container that includes Linux Kernel build dependencies and a full clone
-of the
-[linux-cip](https://git.kernel.org/pub/scm/linux/kernel/git/cip/linux-cip.git/)
-git repository.
+Docker container that includes Linux Kernel build dependencies.
 
 Also included is the `build_kernel.sh` script which handles the actual building
 of the Kernel for the given architecture and configurations.
@@ -35,8 +30,7 @@ The following variables should be set in the gitlab-ci.yml job:
 .config or defconfig format.
 * `CONFIG_LOC`: Must be one of the following options:
   * `intree`: Configuration is present in the linux-cip Kernel.
-  * `cip-kernel-configs`: Configuration is present in the [cip-kernel-configs]
-(https://gitlab.com/cip-project/cip-kernel/cip-kernel-config) repository.
+  * `cip-kernel-configs`: Configuration is present in the [cip-kernel-configs](https://gitlab.com/cip-project/cip-kernel/cip-kernel-config) repository.
   * `url`: Link to raw defconfig file hosted somewhere public. Should be a link
 to the directory where the config is stored, not the actual file.
 * `DEVICES`: A list of device-types as defined in LAVA that are to be tested.
