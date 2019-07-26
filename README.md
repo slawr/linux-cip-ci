@@ -28,21 +28,23 @@ test stage to pick up.
 
 **Parameters**  
 The following variables should be set in the gitlab-ci.yml job:  
-* BUILD_ARCH: The architecture to build for
-* CONFIG: The name of the configuration file to be used. Must be in defconfig
-format
-* CONFIG_LOC: Must be one of the following options:
-  * intree: Configuration is present in the linux-cip Kernel
-  * cip-kernel-configs: Configuration is present in the cip-kernel-configs
+* `BUILD_ARCH`: The architecture to build for.
+* `CONFIG`: The name of the configuration file to be used. Can be in either
+.config or defconfig format.
+* `CONFIG_LOC`: Must be one of the following options:
+  * `intree`: Configuration is present in the linux-cip Kernel.
+  * `cip-kernel-configs`: Configuration is present in the cip-kernel-configs
 repository: https://gitlab.com/cip-project/cip-kernel/cip-kernel-config
-  * url: Link to raw defconfig file hosted somewhere public. Should be a link
+  * `url`: Link to raw defconfig file hosted somewhere public. Should be a link
 to the directory where the config is stored, not the actual file.
-* DEVICES: A list of device-types as defined in LAVA that are to be tested. If
-no testing is required for this job, don't include DEVICES.
-* DTBS: A list of device tree blobs (including path) that are to be used in
-testing. If DEVICES is defined, exactly one DTB per device-type in DEVICES must
-be defined. If DTBS is set when DEVICES is not, all Kernel/device trees will be
-stored by GitLab in case they are required.
+* `DEVICES`: A list of device-types as defined in LAVA that are to be tested.
+This must be set if testing is required.
+* `DTBS`: A list of device tree blobs (including path) that are to be used in
+testing. If `DEVICES` is defined, exactly one DTB per device-type in `DEVICES`
+must be defined. If `DTBS` is set when `DEVICES` is not, all Kernel/device trees
+will be stored by GitLab in case they are required.
+* `BUILD_ONLY`: Set to 'true' if don't want to test this configuration, only
+build. If this is not set a default of 'false' is used.
 
 ## test-image
 Used to build a container that includes the dependencies required for testing.
