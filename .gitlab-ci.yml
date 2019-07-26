@@ -4,7 +4,7 @@ image:
 
 variables:
   DOCKER_DRIVER: overlay2
-  DOCKER_IMAGE_TAG: v1
+  DOCKER_IMAGE_TAG: v2
 
 stages:
   - build
