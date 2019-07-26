@@ -77,6 +77,24 @@ configure_special_cases () {
 	esac
 }
 
+get_kernel_name () {
+	# Work out Kernel version
+	local sha=`git log --pretty=format:"%h" -1`
+	local version=`make kernelversion`
+
+	# Check for local version
+	for localversionfile in localversion*; do
+		if [ -f "$localversionfile" ]; then
+			local localversion=`cat $localversionfile`
+			version=${version}${localversion}
+		fi
+	done
+	version=${version}_${sha}
+
+	# Define Kernel image name
+	KERNEL_NAME=$IMAGE_TYPE_$CONFIG_$version
+}
+
 configure_kernel () {
 	if [ -z "$CONFIG" ]; then
 		echo "No config provided. Using \"defconfig\"."
@@ -109,7 +127,12 @@ configure_kernel () {
 			fi
 
 			# Copy config
-			cp /opt/cip-kernel-config/$ver/$BUILD_ARCH/$CONFIG arch/$BUILD_ARCH/configs/
+			if [[ $CONFIG == *.config ]]; then
+				cp /opt/cip-kernel-config/$ver/$BUILD_ARCH/$CONFIG .config
+			else
+				# Assume defconfig
+				cp /opt/cip-kernel-config/$ver/$BUILD_ARCH/$CONFIG arch/$BUILD_ARCH/configs/
+			fi
 
 			configure_special_cases
 			;;
@@ -122,11 +145,21 @@ configure_kernel () {
 				exit 1
 			fi
 
-			wget -q -P arch/$BUILD_ARCH/configs/ $CONFIG_URL/$CONFIG
-			if [ $? -ne 0 ]; then
-				echo "Error: Config file download failure"
-				clean_up
-				exit 1
+			if [[ $CONFIG == *.config ]]; then
+				wget -q $CONFIG_URL/$CONFIG -O .config
+				if [ $? -ne 0 ]; then
+					echo "Error: Config file download failure"
+					clean_up
+					exit 1
+				fi
+			else
+				# Assume defconfig
+				wget -q -P arch/$BUILD_ARCH/configs/ $CONFIG_URL/$CONFIG
+				if [ $? -ne 0 ]; then
+					echo "Error: Config file download failure"
+					clean_up
+					exit 1
+				fi
 			fi
 
 			# Configure special cases. Obviously this is on the luck
@@ -137,27 +170,14 @@ configure_kernel () {
 			;;
 	esac
 
-	make $BUILD_FLAGS $CONFIG
+	if [[ $CONFIG == *.config ]]; then
+		yes '' | make $BUILD_FLAGS oldconfig
+	else
+		# Assume defconfig
+		make $BUILD_FLAGS $CONFIG
+	fi
 
 	get_kernel_name
-}
-
-get_kernel_name () {
-	# Work out Kernel version
-	local sha=`git log --pretty=format:"%h" -1`
-	local version=`make kernelversion`
-
-	# Check for local version
-	for localversionfile in localversion*; do
-		if [ -f "$localversionfile" ]; then
-			local localversion=`cat $localversionfile`
-			version=${version}${localversion}
-		fi
-	done
-	version=${version}_${sha}
-
-	# Define Kernel image name
-	KERNEL_NAME=$IMAGE_TYPE_$CONFIG_$version
 }
 
 build_modules () {
