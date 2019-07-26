@@ -59,10 +59,10 @@ create_job () {
 	local modules_url="$AWS_URL_DOWN/$MODULES"
 
 	INDEX="0"
-	if [ $ARCH == "x86" ]; then
-		local job_name="${VERSION}_${ARCH}_${CONFIG}"
-	else
+	if $USE_DTB; then
 		local job_name="${VERSION}_${ARCH}_${CONFIG}_${DTB_NAME}"
+	else
+		local job_name="${VERSION}_${ARCH}_${CONFIG}"
 	fi
 
 	local job_definition="$TMP_DIR/${INDEX}_${job_name}.yaml"
@@ -74,7 +74,7 @@ create_job () {
 	if [ ! -z "$MODULES" ]; then
 		sed -i "/DTB_URL/ a \    modules:\n      url: $modules_url\n      compression: gz" $job_definition
 	fi
-	if [ $ARCH != "x86" ]; then
+	if $USE_DTB; then
 		sed -i "s|DTB_URL|$dtb_url|g" $job_definition
 	fi
 	sed -i "s|KERNEL_URL|$kernel_url|g" $job_definition
@@ -135,10 +135,18 @@ find_jobs () {
 			DTB=$device_tree
 			MODULES=$modules
 
+			if [ $DTB == "N/A" ]; then
+				USE_DTB=false
+			else
+				USE_DTB=true
+			fi
+
 			# Get filename from path
 			KERNEL_NAME=`echo "$KERNEL" | sed "s/.*\///"`
-			DTB_NAME=`echo "$DTB" | sed "s/.*\///"`
 			MODULES_NAME=`echo "$MODULES" | sed "s/.*\///"`
+			if $USE_DTB; then
+				DTB_NAME=`echo "$DTB" | sed "s/.*\///"`
+			fi
 
 			print_kernel_info
 			create_job
