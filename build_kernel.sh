@@ -248,6 +248,11 @@ configure_arch () {
 			IMAGE_TYPE="Image"
 			BUILD_DTBS=true
 			;;
+		"powerpc")
+			GCC_NAME="powerpc-linux"
+			IMAGE_TYPE="zImage"
+			BUILD_DTBS=false
+			;;
 		"x86")
 			GCC_NAME="i386-linux"
 			IMAGE_TYPE="bzImage"
@@ -317,22 +322,7 @@ copy_output () {
 		return 0
 	fi
 
-	if [ $BUILD_ARCH == "x86" ]; then
-		# Convert $DEVICES into an array
-		devices=($DEVICES)
-
-		# Add job for each device
-		for i in "${!devices[@]}"; do
-			add_test_job \
-				$KERNEL_NAME \
-				$BUILD_ARCH \
-				$CONFIG \
-				${devices[$i]} \
-				$bin_dir/kernel/$IMAGE_TYPE \
-				"N/A" \
-				$bin_dir/modules/modules.tar.gz
-		done
-	else
+	if $BUILD_DTBS; then
 		# Device tree
 		if [ -z "$DTBS" ]; then
 			echo "No device trees defined, so cannot test."
@@ -366,6 +356,21 @@ copy_output () {
 				${devices[$i]} \
 				$bin_dir/kernel/$IMAGE_TYPE \
 				$bin_dir/dtb/${dtbs[$i]} \
+				$bin_dir/modules/modules.tar.gz
+		done
+	else
+		# Convert $DEVICES into an array
+		devices=($DEVICES)
+
+		# Add job for each device
+		for i in "${!devices[@]}"; do
+			add_test_job \
+				$KERNEL_NAME \
+				$BUILD_ARCH \
+				$CONFIG \
+				${devices[$i]} \
+				$bin_dir/kernel/$IMAGE_TYPE \
+				"N/A" \
 				$bin_dir/modules/modules.tar.gz
 		done
 	fi
