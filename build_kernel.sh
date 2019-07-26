@@ -59,13 +59,25 @@ configure_special_cases () {
 			BUILD_FLAGS="$BUILD_FLAGS LOADADDR=0x40008000"
 			IMAGE_TYPE="uImage"
 			;;
+		"siemens_am335x-dxr2_defconfig")
+			# Install power management firmware
+			wget -q http://arago-project.org/git/projects/?p=am33x-cm3.git\;a=blob_plain\;f=bin/am335x-pm-firmware.bin\;hb=HEAD -O firmware/am335x-pm-firmware.bin
+			echo "CONFIG_EXTRA_FIRMWARE_DIR=\"firmware\"" >> arch/$BUILD_ARCH/configs/$CONFIG
+			;;
+		"siemens_am335x-draco_defconfig")
+			# Install power management firmware
+			wget -q http://arago-project.org/git/projects/?p=am33x-cm3.git\;a=blob_plain\;f=bin/am335x-pm-firmware.bin\;hb=HEAD -O firmware/am335x-pm-firmware.bin
+			echo "CONFIG_EXTRA_FIRMWARE_DIR=\"firmware\"" >> arch/$BUILD_ARCH/configs/$CONFIG
+			;;
+		"siemens_am335x-etamin_defconfig")
+			# Install power management firmware
+			wget -q http://arago-project.org/git/projects/?p=am33x-cm3.git\;a=blob_plain\;f=bin/am335x-pm-firmware.bin\;hb=HEAD -O firmware/am335x-pm-firmware.bin
+			echo "CONFIG_EXTRA_FIRMWARE_DIR=\"firmware\"" >> arch/$BUILD_ARCH/configs/$CONFIG
+			;;
 	esac
 }
 
 configure_kernel () {
-	echo "$CONFIG"
-	echo "$CONFIG_LOC"
-
 	if [ -z "$CONFIG" ]; then
 		echo "No config provided. Using \"defconfig\"."
 		CONFIG="defconfig"
