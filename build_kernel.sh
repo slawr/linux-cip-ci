@@ -120,7 +120,7 @@ configure_kernel () {
 
 			# Check provided config is there
 			local ver=`make kernelversion | sed -e 's/\.[^\.]*$//'`
-			if [ ! $(find /opt/cip-kernel-config/$ver -name "$CONFIG") ]; then
+			if [ ! -f /opt/cip-kernel-config/$ver/$BUILD_ARCH/$CONFIG ]; then
 				echo "Error: Provided configuration not present	in cip-kernel-configs"
 				clean_up
 				exit 1
