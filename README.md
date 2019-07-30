@@ -151,22 +151,6 @@ x86_siemens_server_defconfig:
     paths:
       - output
 
-powerpc_toshiba_defconfig:
-  stage: build
-  image: registry.gitlab.com/cip-playground/linux-cip-ci:build-$DOCKER_IMAGE_TAG
-  variables:
-    BUILD_ARCH: powerpc
-    CONFIG: toshiba_defconfig
-    CONFIG_LOC: cip-kernel-config
-    BUILD_ONLY: "true"
-  script:
-    - /opt/build_kernel.sh
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: on_success
-    paths:
-      - output
-
 run_tests:
   stage: test
   image: registry.gitlab.com/cip-playground/linux-cip-ci:test-$DOCKER_IMAGE_TAG
