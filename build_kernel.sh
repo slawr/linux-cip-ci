@@ -74,6 +74,10 @@ configure_special_cases () {
 			wget -q http://arago-project.org/git/projects/?p=am33x-cm3.git\;a=blob_plain\;f=bin/am335x-pm-firmware.bin\;hb=HEAD -O firmware/am335x-pm-firmware.bin
 			echo "CONFIG_EXTRA_FIRMWARE_DIR=\"firmware\"" >> arch/$BUILD_ARCH/configs/$CONFIG
 			;;
+		"toshiba_defconfig")
+			if [ $GCC_VER == "8.1.0" ] && [ $BUILD_ARCH == "powerpc" ]; then
+				echo "CONFIG_PPC_DISABLE_WERROR=y" >> arch/$BUILD_ARCH/configs/$CONFIG
+			fi
 	esac
 }
 
