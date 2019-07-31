@@ -28,7 +28,6 @@ set -e
 
 ################################################################################
 WORK_DIR=`pwd`
-TMP_DIR="$WORK_DIR/tmp"
 OUTPUT_DIR="$WORK_DIR/output"
 TEMPLATE_DIR="/opt/healthcheck_templates"
 ################################################################################
@@ -40,7 +39,7 @@ if [ -z "$SUBMIT_ONLY" ]; then SUBMIT_ONLY=false; fi
 ################################################################################
 
 set_up () {
-	mkdir -p $TMP_DIR
+	TMP_DIR="$(mktemp -d)"
 }
 
 clean_up () {
