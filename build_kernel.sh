@@ -120,6 +120,12 @@ configure_kernel () {
 
 			# Check provided config is there
 			local ver=`make kernelversion | sed -e 's/\.[^\.]*$//'`
+
+			# Temporary fix as cip-kernel-config changed directory
+			# structure. At the moment this won't handle the
+			# 4.4.y-cip-rt directory.
+			ver=${ver}.y-cip
+
 			if [ ! -f /opt/cip-kernel-config/$ver/$BUILD_ARCH/$CONFIG ]; then
 				echo "Error: Provided configuration not present	in cip-kernel-configs"
 				clean_up
