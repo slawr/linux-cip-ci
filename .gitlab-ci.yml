@@ -16,7 +16,7 @@ before_script:
 build-image-master:
   stage: build
   script:
-    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/build.Dockerfile --destination $CI_REGISTRY_IMAGE:build-$CI_COMMIT_REF_SHA --destination $CI_REGISTRY_IMAGE:build-$DOCKER_IMAGE_TAG --destination $CI_REGISTRY_IMAGE:build-latest
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/build.Dockerfile --destination $CI_REGISTRY_IMAGE:build-$CI_COMMIT_SHA --destination $CI_REGISTRY_IMAGE:build-$DOCKER_IMAGE_TAG --destination $CI_REGISTRY_IMAGE:build-latest
   retry: 1
   only:
     - master
@@ -32,7 +32,7 @@ build-image:
 test-image-master:
   stage: build
   script:
-    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/test.Dockerfile --destination $CI_REGISTRY_IMAGE:test-$CI_COMMIT_REF_SHA --destination $CI_REGISTRY_IMAGE:test-$DOCKER_IMAGE_TAG --destination $CI_REGISTRY_IMAGE:test-latest
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/test.Dockerfile --destination $CI_REGISTRY_IMAGE:test-$CI_COMMIT_SHA --destination $CI_REGISTRY_IMAGE:test-$DOCKER_IMAGE_TAG --destination $CI_REGISTRY_IMAGE:test-latest
   retry: 1
   only:
     - master
