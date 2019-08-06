@@ -9,9 +9,9 @@ job_name: JOB_NAME
 
 timeouts:
   job:
-    minutes: 10
+    minutes: 15
   action:
-    minutes: 5
+    minutes: 10
   connection:
     minutes: 5
 priority: medium
@@ -30,7 +30,7 @@ notify:
 actions:
 - deploy:
     timeout:
-      minutes: 5
+      minutes: 10
     to: tftp
     os: oe
     kernel:
