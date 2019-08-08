@@ -25,7 +25,8 @@ test stage to pick up.
 
 **Parameters**  
 The following variables should be set in the gitlab-ci.yml job:  
-* `BUILD_ARCH`: The architecture to build for.
+* `BUILD_ARCH`: The architecture to build for. Architectures currently supported
+are: arm, arm64, powerpc, x86.
 * `CONFIG`: The name of the configuration file to be used. Can be in either
 .config or defconfig format.
 * `CONFIG_LOC`: Must be one of the following options:
@@ -152,7 +153,7 @@ x86_siemens_server_defconfig:
 
 run_tests:
   stage: test
-  image: registry.gitlab.com/cip-playground/linux-cip-ci:test-v1
+  image: registry.gitlab.com/cip-playground/linux-cip-ci:test-$DOCKER_IMAGE_TAG
   variables:
     GIT_STRATEGY: none
     TEST_TIMEOUT: 30

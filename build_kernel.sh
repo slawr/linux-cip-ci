@@ -74,6 +74,10 @@ configure_special_cases () {
 			wget -q http://arago-project.org/git/projects/?p=am33x-cm3.git\;a=blob_plain\;f=bin/am335x-pm-firmware.bin\;hb=HEAD -O firmware/am335x-pm-firmware.bin
 			echo "CONFIG_EXTRA_FIRMWARE_DIR=\"firmware\"" >> arch/$BUILD_ARCH/configs/$CONFIG
 			;;
+		"toshiba_defconfig")
+			if [ $GCC_VER == "8.1.0" ] && [ $BUILD_ARCH == "powerpc" ]; then
+				echo "CONFIG_PPC_DISABLE_WERROR=y" >> arch/$BUILD_ARCH/configs/$CONFIG
+			fi
 	esac
 }
 
@@ -248,6 +252,11 @@ configure_arch () {
 			IMAGE_TYPE="Image"
 			BUILD_DTBS=true
 			;;
+		"powerpc")
+			GCC_NAME="powerpc-linux"
+			IMAGE_TYPE="zImage"
+			BUILD_DTBS=false
+			;;
 		"x86")
 			GCC_NAME="i386-linux"
 			IMAGE_TYPE="bzImage"
@@ -317,22 +326,7 @@ copy_output () {
 		return 0
 	fi
 
-	if [ $BUILD_ARCH == "x86" ]; then
-		# Convert $DEVICES into an array
-		devices=($DEVICES)
-
-		# Add job for each device
-		for i in "${!devices[@]}"; do
-			add_test_job \
-				$KERNEL_NAME \
-				$BUILD_ARCH \
-				$CONFIG \
-				${devices[$i]} \
-				$bin_dir/kernel/$IMAGE_TYPE \
-				"N/A" \
-				$bin_dir/modules/modules.tar.gz
-		done
-	else
+	if $BUILD_DTBS; then
 		# Device tree
 		if [ -z "$DTBS" ]; then
 			echo "No device trees defined, so cannot test."
@@ -366,6 +360,21 @@ copy_output () {
 				${devices[$i]} \
 				$bin_dir/kernel/$IMAGE_TYPE \
 				$bin_dir/dtb/${dtbs[$i]} \
+				$bin_dir/modules/modules.tar.gz
+		done
+	else
+		# Convert $DEVICES into an array
+		devices=($DEVICES)
+
+		# Add job for each device
+		for i in "${!devices[@]}"; do
+			add_test_job \
+				$KERNEL_NAME \
+				$BUILD_ARCH \
+				$CONFIG \
+				${devices[$i]} \
+				$bin_dir/kernel/$IMAGE_TYPE \
+				"N/A" \
 				$bin_dir/modules/modules.tar.gz
 		done
 	fi
