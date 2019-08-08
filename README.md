@@ -1,5 +1,5 @@
 # linux-cip-ci
-[![pipeline status](https://gitlab.com/cip-playground/linux-cip-ci/badges/master/pipeline.svg)](https://gitlab.com/cip-playground/linux-cip-ci/commits/master)
+[![pipeline status](https://gitlab.com/cip-project/cip-testing/linux-cip-ci/badges/master/pipeline.svg)](https://gitlab.com/cip-project/cip-testing/linux-cip-ci/commits/master)
 
 Current DOCKER_IMAGE_TAG version: v2
 
@@ -86,7 +86,7 @@ variables:
 
 arm_renesas_shmobile_defconfig:
   stage: build
-  image: registry.gitlab.com/cip-playground/linux-cip-ci:build-$DOCKER_IMAGE_TAG
+  image: registry.gitlab.com/cip-project/cip-testing/linux-cip-ci:build-$DOCKER_IMAGE_TAG
   variables:
     BUILD_ARCH: arm
     CONFIG: renesas_shmobile_defconfig
@@ -103,7 +103,7 @@ arm_renesas_shmobile_defconfig:
 
 arm64_renesas_defconfig:
   stage: build
-  image: registry.gitlab.com/cip-playground/linux-cip-ci:build-$DOCKER_IMAGE_TAG
+  image: registry.gitlab.com/cip-project/cip-testing/linux-cip-ci:build-$DOCKER_IMAGE_TAG
   variables:
     BUILD_ARCH: arm64
     CONFIG: renesas_defconfig
@@ -120,7 +120,7 @@ arm64_renesas_defconfig:
 
 arm64_defconfig:
   stage: build
-  image: registry.gitlab.com/cip-playground/linux-cip-ci:build-$DOCKER_IMAGE_TAG
+  image: registry.gitlab.com/cip-project/cip-testing/linux-cip-ci:build-$DOCKER_IMAGE_TAG
   variables:
     BUILD_ARCH: arm64
     CONFIG: defconfig
@@ -137,7 +137,7 @@ arm64_defconfig:
 
 x86_siemens_server_defconfig:
   stage: build
-  image: registry.gitlab.com/cip-playground/linux-cip-ci:build-$DOCKER_IMAGE_TAG
+  image: registry.gitlab.com/cip-project/cip-testing/linux-cip-ci:build-$DOCKER_IMAGE_TAG
   variables:
     BUILD_ARCH: x86
     CONFIG: siemens_server_defconfig
@@ -153,7 +153,7 @@ x86_siemens_server_defconfig:
 
 run_tests:
   stage: test
-  image: registry.gitlab.com/cip-playground/linux-cip-ci:test-$DOCKER_IMAGE_TAG
+  image: registry.gitlab.com/cip-project/cip-testing/linux-cip-ci:test-$DOCKER_IMAGE_TAG
   variables:
     GIT_STRATEGY: none
     TEST_TIMEOUT: 30
