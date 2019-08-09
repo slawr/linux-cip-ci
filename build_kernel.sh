@@ -308,7 +308,9 @@ copy_output () {
 	mkdir -p $OUTPUT_DIR/$bin_dir/kernel
 	cp arch/$BUILD_ARCH/boot/$IMAGE_TYPE $OUTPUT_DIR/$bin_dir/kernel
 
-	# TODO: Copy Kernel configuration
+	# Copy Kernel configuration
+	mkdir -p $OUTPUT_DIR/$bin_dir/config
+	cp .config $OUTPUT_DIR/$bin_dir/config
 
 	# Modules
 	if [ -f "$TMP_DIR/modules.tar.gz" ]; then
