@@ -21,7 +21,6 @@ WORK_DIR=`pwd`
 GCC_VER="8.1.0"
 COMPILER_BASE_URL="https://cdn.kernel.org/pub/tools/crosstool/files/bin"
 COMPILER_INSTALL_DIR="$WORK_DIR/gcc"
-TMP_DIR="$WORK_DIR/tmp"
 MODULE_INSTALL_DIR="$TMP_DIR/modules"
 OUTPUT_DIR="$WORK_DIR/output"
 JOBS_LIST="$OUTPUT_DIR/$CI_JOB_NAME.jobs"
@@ -32,7 +31,7 @@ if [ -z "$BUILD_ONLY" ]; then BUILD_ONLY=false; fi
 ################################################################################
 
 set_up () {
-	mkdir -p $TMP_DIR
+	TMP_DIR="$(mktemp -d)"
 	mkdir -p $COMPILER_INSTALL_DIR
 	mkdir -p $MODULE_INSTALL_DIR
 	mkdir -p $OUTPUT_DIR
@@ -309,7 +308,9 @@ copy_output () {
 	mkdir -p $OUTPUT_DIR/$bin_dir/kernel
 	cp arch/$BUILD_ARCH/boot/$IMAGE_TYPE $OUTPUT_DIR/$bin_dir/kernel
 
-	# TODO: Copy Kernel configuration
+	# Copy Kernel configuration
+	mkdir -p $OUTPUT_DIR/$bin_dir/config
+	cp .config $OUTPUT_DIR/$bin_dir/config
 
 	# Modules
 	if [ -f "$TMP_DIR/modules.tar.gz" ]; then

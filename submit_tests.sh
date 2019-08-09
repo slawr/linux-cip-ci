@@ -28,7 +28,6 @@ set -e
 
 ################################################################################
 WORK_DIR=`pwd`
-TMP_DIR="$WORK_DIR/tmp"
 OUTPUT_DIR="$WORK_DIR/output"
 TEMPLATE_DIR="/opt/healthcheck_templates"
 ################################################################################
@@ -40,7 +39,7 @@ if [ -z "$SUBMIT_ONLY" ]; then SUBMIT_ONLY=false; fi
 ################################################################################
 
 set_up () {
-	mkdir -p $TMP_DIR
+	TMP_DIR="$(mktemp -d)"
 }
 
 clean_up () {
@@ -192,6 +191,14 @@ check_if_all_finished() {
         return 0
 }
 
+print_current_status () {
+	echo "------------------------------"
+	echo "Current job status:"
+	for i in "${JOBS[@]}"; do
+		echo "Job #$i: ${STATUS[$i]}"
+	done
+}
+
 check_status () {
 	# Current time + timeout time
 	local end_time=`date +%s -d "+ $TEST_TIMEOUT min"`
@@ -199,10 +206,7 @@ check_status () {
 
 	if [ ${#JOBS[@]} -ne 0 ]
 	then
-		echo "Current job status:"
-		for i in "${JOBS[@]}"; do
-			echo "Job #$i: ${STATUS[$i]}"
-		done
+		print_current_status
 
 		while true
 		do
@@ -211,12 +215,21 @@ check_status () {
 			do
 				if [ ${STATUS[$i]} != "Finished" ]
 				then
-					local ret=`lavacli $LAVACLI_ARGS jobs show $i | grep state | cut -d ":" -f 2 | awk '{$1=$1};1'`
+					local ret=`lavacli $LAVACLI_ARGS \
+						jobs show $i \
+						| grep state \
+						| cut -d ":" -f 2 \
+						| awk '{$1=$1};1'`
+
 
 					if [ ${STATUS[$i]} != $ret ]; then
-						echo "Job #$i: $ret"
+						STATUS[$i]=$ret
+
+						# Something has changed
+						print_current_status
+					else
+						STATUS[$i]=$ret
 					fi
-					STATUS[$i]=$ret
 				fi
 			done
 
@@ -240,7 +253,11 @@ check_status () {
 			# Print job outcome
 			for i in "${JOBS[@]}"
 			do
-				local ret=`lavacli $LAVACLI_ARGS jobs show $i | grep Health | cut -d ":" -f 2 | awk '{$1=$1};1'`
+				local ret=`lavacli $LAVACLI_ARGS \
+					jobs show $i \
+					| grep Health \
+					| cut -d ":" -f 2 \
+					| awk '{$1=$1};1'`
 				echo "Job #$i completed. Job health: $ret"
 
 				if [ ${ret} != "Complete" ]; then
