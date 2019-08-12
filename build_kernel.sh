@@ -59,19 +59,22 @@ configure_special_cases () {
 			IMAGE_TYPE="uImage"
 			;;
 		"siemens_am335x-dxr2_defconfig")
-			# Install power management firmware
-			wget -q http://arago-project.org/git/projects/?p=am33x-cm3.git\;a=blob_plain\;f=bin/am335x-pm-firmware.bin\;hb=HEAD -O firmware/am335x-pm-firmware.bin
-			echo "CONFIG_EXTRA_FIRMWARE_DIR=\"firmware\"" >> arch/$BUILD_ARCH/configs/$CONFIG
+			# Remove power management firmware
+			# (we don't want to re-distribute)
+			sed -i '/CONFIG_EXTRA_FIRMWARE="am335x-pm-firmware.bin"/d' \
+				arch/$BUILD_ARCH/configs/$CONFIG
 			;;
 		"siemens_am335x-draco_defconfig")
-			# Install power management firmware
-			wget -q http://arago-project.org/git/projects/?p=am33x-cm3.git\;a=blob_plain\;f=bin/am335x-pm-firmware.bin\;hb=HEAD -O firmware/am335x-pm-firmware.bin
-			echo "CONFIG_EXTRA_FIRMWARE_DIR=\"firmware\"" >> arch/$BUILD_ARCH/configs/$CONFIG
+			# Remove power management firmware
+			# (we don't want to re-distribute)
+			sed -i '/CONFIG_EXTRA_FIRMWARE="am335x-pm-firmware.bin"/d' \
+				arch/$BUILD_ARCH/configs/$CONFIG
 			;;
 		"siemens_am335x-etamin_defconfig")
-			# Install power management firmware
-			wget -q http://arago-project.org/git/projects/?p=am33x-cm3.git\;a=blob_plain\;f=bin/am335x-pm-firmware.bin\;hb=HEAD -O firmware/am335x-pm-firmware.bin
-			echo "CONFIG_EXTRA_FIRMWARE_DIR=\"firmware\"" >> arch/$BUILD_ARCH/configs/$CONFIG
+			# Remove power management firmware
+			# (we don't want to re-distribute)
+			sed -i '/CONFIG_EXTRA_FIRMWARE="am335x-pm-firmware.bin"/d' \
+				arch/$BUILD_ARCH/configs/$CONFIG
 			;;
 		"toshiba_defconfig")
 			if [ $GCC_VER == "8.1.0" ] && [ $BUILD_ARCH == "powerpc" ]; then
