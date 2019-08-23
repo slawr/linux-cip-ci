@@ -29,7 +29,7 @@ set -e
 ################################################################################
 WORK_DIR=`pwd`
 OUTPUT_DIR="$WORK_DIR/output"
-TEMPLATE_DIR="/opt/healthcheck_templates"
+TEMPLATE_DIR="/opt/lava_templates"
 ################################################################################
 AWS_URL_UP="s3://download.cip-project.org/ciptesting/ci"
 AWS_URL_DOWN="https://s3-us-west-2.amazonaws.com/download.cip-project.org/ciptesting/ci"
