@@ -150,6 +150,7 @@ find_jobs () {
 
 			print_kernel_info
 			create_job healthcheck
+			create_job smc
 		done < $jobfile
 	done
 }
