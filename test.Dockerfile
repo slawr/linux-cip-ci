@@ -11,8 +11,8 @@ RUN apt-get update \
 # Install AWS CLI
 RUN pip3 install awscli
 
-# Copy healthcheck templates
-COPY healthcheck_templates /opt/healthcheck_templates
+# Copy lava templates
+COPY lava_templates /opt/lava_templates
 
 # Copy test script
 COPY submit_tests.sh /opt/

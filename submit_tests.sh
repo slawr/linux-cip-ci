@@ -29,7 +29,7 @@ set -e
 ################################################################################
 WORK_DIR=`pwd`
 OUTPUT_DIR="$WORK_DIR/output"
-TEMPLATE_DIR="/opt/healthcheck_templates"
+TEMPLATE_DIR="/opt/lava_templates"
 ################################################################################
 AWS_URL_UP="s3://download.cip-project.org/ciptesting/ci"
 AWS_URL_DOWN="https://s3-us-west-2.amazonaws.com/download.cip-project.org/ciptesting/ci"
@@ -47,11 +47,12 @@ clean_up () {
 }
 
 get_template () {
-	TEMPLATE="$TEMPLATE_DIR/$DEVICE.yaml"
+	TEMPLATE="${TEMPLATE_DIR}/${DEVICE}_${1}.yaml"
 }
 
 create_job () {
-	get_template
+	local testname="$1"
+	get_template $testname
 
 	local dtb_url="$AWS_URL_DOWN/$DTB"
 	local kernel_url="$AWS_URL_DOWN/$KERNEL"
@@ -59,9 +60,9 @@ create_job () {
 
 	INDEX="0"
 	if $USE_DTB; then
-		local job_name="${VERSION}_${ARCH}_${CONFIG}_${DTB_NAME}"
+		local job_name="${VERSION}_${ARCH}_${CONFIG}_${DTB_NAME}_${testname}"
 	else
-		local job_name="${VERSION}_${ARCH}_${CONFIG}"
+		local job_name="${VERSION}_${ARCH}_${CONFIG}_${testname}"
 	fi
 
 	local job_definition="$TMP_DIR/${INDEX}_${job_name}.yaml"
@@ -148,7 +149,8 @@ find_jobs () {
 			fi
 
 			print_kernel_info
-			create_job
+			create_job healthcheck
+			create_job smc
 		done < $jobfile
 	done
 }
