@@ -126,24 +126,21 @@ configure_kernel () {
 
 			# Check provided config is there
 			local ver=`make kernelversion | sed -e 's/\.[^\.]*$//'`
-
-			# Temporary fix as cip-kernel-config changed directory
-			# structure. At the moment this won't handle the
-			# 4.4.y-cip-rt directory.
 			ver=${ver}.y-cip
-
-			if [ ! -f /opt/cip-kernel-config/$ver/$BUILD_ARCH/$CONFIG ]; then
+			if [ ! -f /opt/cip-kernel-config/${ver}*/$BUILD_ARCH/$CONFIG ]; then
 				echo "Error: Provided configuration not present	in cip-kernel-configs"
 				clean_up
 				exit 1
 			fi
 
 			# Copy config
+			# Note that if there are multiple configurations with
+			# the same name in *.y-cip and *.y-cip-rt this will fail
 			if [[ $CONFIG == *.config ]]; then
-				cp /opt/cip-kernel-config/$ver/$BUILD_ARCH/$CONFIG .config
+				cp /opt/cip-kernel-config/$ver*/$BUILD_ARCH/$CONFIG .config
 			else
 				# Assume defconfig
-				cp /opt/cip-kernel-config/$ver/$BUILD_ARCH/$CONFIG arch/$BUILD_ARCH/configs/
+				cp /opt/cip-kernel-config/$ver*/$BUILD_ARCH/$CONFIG arch/$BUILD_ARCH/configs/
 			fi
 
 			configure_special_cases
