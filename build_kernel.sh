@@ -21,7 +21,7 @@ WORK_DIR=`pwd`
 GCC_VER="8.1.0"
 COMPILER_BASE_URL="https://cdn.kernel.org/pub/tools/crosstool/files/bin"
 COMPILER_INSTALL_DIR="$WORK_DIR/gcc"
-MODULE_INSTALL_DIR="$TMP_DIR/modules"
+MODULE_INSTALL_DIR="modules"	# To be appended to $TMP_DIR
 OUTPUT_DIR="$WORK_DIR/output"
 JOBS_LIST="$OUTPUT_DIR/$CI_JOB_NAME.jobs"
 ################################################################################
@@ -32,6 +32,7 @@ if [ -z "$BUILD_ONLY" ]; then BUILD_ONLY=false; fi
 
 set_up () {
 	TMP_DIR="$(mktemp -d)"
+	MODULE_INSTALL_DIR=$TMP_DIR/$MODULE_INSTALL_DIR
 	mkdir -p $COMPILER_INSTALL_DIR
 	mkdir -p $MODULE_INSTALL_DIR
 	mkdir -p $OUTPUT_DIR
@@ -39,7 +40,6 @@ set_up () {
 
 clean_up () {
 	rm -rf $TMP_DIR
-	rm -rf $MODULE_INSTALL_DIR
 }
 
 clean_build () {
