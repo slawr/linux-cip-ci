@@ -354,14 +354,17 @@ copy_output () {
 
 		# Add job for each device/dtb combo
 		for i in "${!dtbs[@]}"; do
-			add_test_job \
-				$KERNEL_NAME \
-				$BUILD_ARCH \
-				$CONFIG \
-				${devices[$i]} \
-				$bin_dir/kernel/$IMAGE_TYPE \
-				$bin_dir/dtb/${dtbs[$i]} \
-				$bin_dir/modules/modules.tar.gz
+			# Only create job if device tree was actually built
+			if [ -f "$OUTPUT_DIR/$bin_dir/dtb/${dtbs[$i]}" ]; then
+				add_test_job \
+					$KERNEL_NAME \
+					$BUILD_ARCH \
+					$CONFIG \
+					${devices[$i]} \
+					$bin_dir/kernel/$IMAGE_TYPE \
+					$bin_dir/dtb/${dtbs[$i]} \
+					$bin_dir/modules/modules.tar.gz
+			fi
 		done
 	else
 		# Convert $DEVICES into an array
