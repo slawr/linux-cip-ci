@@ -34,6 +34,7 @@ TEMPLATE_DIR="/opt/lava_templates"
 AWS_URL_UP="s3://download.cip-project.org/ciptesting/ci"
 AWS_URL_DOWN="https://s3-us-west-2.amazonaws.com/download.cip-project.org/ciptesting/ci"
 LAVACLI_ARGS="--uri https://$CIP_LAVA_LAB_USER:$CIP_LAVA_LAB_TOKEN@lava.ciplatform.org/RPC2"
+INDEX="0"
 if [ -z "$TEST_TIMEOUT" ]; then TEST_TIMEOUT=30; fi
 if [ -z "$SUBMIT_ONLY" ]; then SUBMIT_ONLY=false; fi
 ################################################################################
@@ -58,7 +59,6 @@ create_job () {
 	local kernel_url="$AWS_URL_DOWN/$KERNEL"
 	local modules_url="$AWS_URL_DOWN/$MODULES"
 
-	INDEX="0"
 	if $USE_DTB; then
 		local job_name="${VERSION}_${ARCH}_${CONFIG}_${DTB_NAME}_${testname}"
 	else
@@ -157,8 +157,7 @@ find_jobs () {
 
 submit_job() {
 	# TODO: Add yaml validation
-
-        # Make sure job file exists
+        # Make sure yaml file exists
 	if [ -f $1 ]; then
 		echo "Submitting $1 to LAVA master..."
 		# Catch error that occurs if invalid yaml file is submitted
@@ -170,7 +169,34 @@ submit_job() {
 			echo ${ret}
 		else
 			echo "Job submitted successfully as #${ret}."
-			STATUS[${ret}]="Submitted"
+
+			local lavacli_output=$TMP_DIR/lavacli_output
+			lavacli $LAVACLI_ARGS jobs show ${ret} \
+				> $lavacli_output
+
+			local status=`cat $lavacli_output \
+				| grep "state" \
+				| cut -d ":" -f 2 \
+				| awk '{$1=$1};1'`
+			STATUS[${ret}]=$status
+
+			local device_type=`cat $lavacli_output \
+				| grep "device-type" \
+				| cut -d ":" -f 2 \
+				| awk '{$1=$1};1'`
+			DEVICE_TYPE[${ret}]=$device_type
+
+			local device=`cat $lavacli_output \
+				| grep "device      :" \
+				| cut -d ":" -f 2 \
+				| awk '{$1=$1};1'`
+			DEVICE[${ret}]=$device
+
+			local test=`cat $lavacli_output \
+				| grep "description" \
+				| rev | cut -d "_" -f 1 | rev`
+			TEST[${ret}]=$test
+
 			JOBS+=(${ret})
 		fi
 	fi
@@ -196,8 +222,12 @@ check_if_all_finished() {
 print_current_status () {
 	echo "------------------------------"
 	echo "Current job status:"
+	echo "------------------------------"
 	for i in "${JOBS[@]}"; do
 		echo "Job #$i: ${STATUS[$i]}"
+		echo "  Device Type: ${DEVICE_TYPE[$i]}"
+		echo "  Device: ${DEVICE[$i]}"
+		echo "  Test: ${TEST[$i]}"
 	done
 }
 
@@ -217,20 +247,34 @@ check_status () {
 			do
 				if [ ${STATUS[$i]} != "Finished" ]
 				then
-					local ret=`lavacli $LAVACLI_ARGS \
-						jobs show $i \
-						| grep state \
+					local lavacli_output=$TMP_DIR/lavacli_output
+					lavacli $LAVACLI_ARGS jobs show $i \
+						> $lavacli_output
+
+					local status=`cat $lavacli_output \
+						| grep "state" \
 						| cut -d ":" -f 2 \
 						| awk '{$1=$1};1'`
 
+					local device_type=`cat $lavacli_output \
+						| grep "device-type" \
+						| cut -d ":" -f 2 \
+						| awk '{$1=$1};1'`
+					DEVICE_TYPE[$i]=$device_type
 
-					if [ ${STATUS[$i]} != $ret ]; then
-						STATUS[$i]=$ret
+					local device=`cat $lavacli_output \
+						| grep "device      :" \
+						| cut -d ":" -f 2 \
+						| awk '{$1=$1};1'`
+					DEVICE[$i]=$device
+
+					if [ ${STATUS[$i]} != $status ]; then
+						STATUS[$i]=$status
 
 						# Something has changed
 						print_current_status
 					else
-						STATUS[$i]=$ret
+						STATUS[$i]=$status
 					fi
 				fi
 			done
