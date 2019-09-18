@@ -91,13 +91,13 @@ arm_renesas_shmobile_defconfig:
     BUILD_ARCH: arm
     CONFIG: renesas_shmobile_defconfig
     CONFIG_LOC: cip-kernel-config
-    DEVICES: r8a7743-iwg20d-q7 r8a7745-iwg22d-sodimm
-    DTBS: r8a7743-iwg20d-q7-dbcm-ca.dtb r8a7745-iwg22d-sodimm-dbhd-ca.dtb
+    DEVICES: r8a7743-iwg20d-q7 r8a7745-iwg22d-sodimm r8a77470-iwg23s-sbc
+    DTBS: r8a7743-iwg20d-q7-dbcm-ca.dtb r8a7745-iwg22d-sodimm-dbhd-ca.dtb r8a77470-iwg23s-sbc.dtb
   script:
     - /opt/build_kernel.sh
   artifacts:
     name: "$CI_JOB_NAME"
-    when: on_success
+    when: always
     paths:
       - output
 
@@ -114,7 +114,7 @@ arm64_renesas_defconfig:
     - /opt/build_kernel.sh
   artifacts:
     name: "$CI_JOB_NAME"
-    when: on_success
+    when: always
     paths:
       - output
 
@@ -131,7 +131,7 @@ arm64_defconfig:
     - /opt/build_kernel.sh
   artifacts:
     name: "$CI_JOB_NAME"
-    when: on_success
+    when: always
     paths:
       - output
 
@@ -147,18 +147,22 @@ x86_siemens_server_defconfig:
     - /opt/build_kernel.sh
   artifacts:
     name: "$CI_JOB_NAME"
-    when: on_success
+    when: always
     paths:
       - output
 
 run_tests:
   stage: test
   image: registry.gitlab.com/cip-project/cip-testing/linux-cip-ci:test-$DOCKER_IMAGE_TAG
+  when: always
   variables:
     GIT_STRATEGY: none
     TEST_TIMEOUT: 30
-  when: always
-  before_script: []
   script:
     - /opt/submit_tests.sh
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: always
+    paths:
+      - output
 ```

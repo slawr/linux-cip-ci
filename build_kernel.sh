@@ -101,6 +101,13 @@ get_kernel_name () {
 	KERNEL_NAME=$IMAGE_TYPE_$CONFIG_$version
 }
 
+save_kernel_config () {
+	# Copy Kernel config now so that we have it even if the build fails
+	local bin_dir=$KERNEL_NAME/$BUILD_ARCH/$CONFIG
+	mkdir -p $OUTPUT_DIR/$bin_dir/config
+	cp .config $OUTPUT_DIR/$bin_dir/config
+}
+
 configure_kernel () {
 	if [ -z "$CONFIG" ]; then
 		echo "No config provided. Using \"defconfig\"."
@@ -187,6 +194,7 @@ configure_kernel () {
 	fi
 
 	get_kernel_name
+	save_kernel_config
 }
 
 build_modules () {
@@ -307,10 +315,6 @@ copy_output () {
 	# Kernel
 	mkdir -p $OUTPUT_DIR/$bin_dir/kernel
 	cp arch/$BUILD_ARCH/boot/$IMAGE_TYPE $OUTPUT_DIR/$bin_dir/kernel
-
-	# Copy Kernel configuration
-	mkdir -p $OUTPUT_DIR/$bin_dir/config
-	cp .config $OUTPUT_DIR/$bin_dir/config
 
 	# Modules
 	if [ -f "$TMP_DIR/modules.tar.gz" ]; then
