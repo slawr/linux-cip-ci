@@ -115,7 +115,7 @@ print_kernel_info () {
 # MODULES is optional
 find_jobs () {
 	# Make sure there is at least one job file
-	if [ `find $OUTPUT_DIR -maxdepth 1 -name "*.jobs" -printf '.' |  wc -c` -eq 0 ]; then
+	if [ `find "$OUTPUT_DIR" -maxdepth 1 -name "*.jobs" -printf '.' |  wc -c` -eq 0 ]; then
 		echo "No jobs found"
 		clean_up
 		# Quit cleanly as technically there is nothing wrong, it's just
@@ -137,7 +137,7 @@ find_jobs () {
 			DTB=$device_tree
 			MODULES=$modules
 
-			if [ $DTB == "N/A" ]; then
+			if [ "$DTB" == "N/A" ]; then
 				USE_DTB=false
 			else
 				USE_DTB=true
@@ -160,7 +160,7 @@ find_jobs () {
 submit_job() {
 	# TODO: Add yaml validation
         # Make sure yaml file exists
-	if [ -f $1 ]; then
+	if [ -f "$1" ]; then
 		echo "Submitting $1 to LAVA master..."
 		# Catch error that occurs if invalid yaml file is submitted
 		local ret=`lavacli $LAVACLI_ARGS jobs submit $1` || error=true
@@ -214,7 +214,7 @@ submit_jobs () {
 check_if_all_finished() {
         for i in "${JOBS[@]}"
         do
-                if [ ${STATUS[$i]} != "Finished" ]; then
+                if [ "${STATUS[$i]}" != "Finished" ]; then
                         return 1
                 fi
         done
@@ -247,7 +247,7 @@ check_status () {
 			# Get latest status
 			for i in "${JOBS[@]}"
 			do
-				if [ ${STATUS[$i]} != "Finished" ]
+				if [ "${STATUS[$i]}" != "Finished" ]
 				then
 					local lavacli_output=$TMP_DIR/lavacli_output
 					lavacli $LAVACLI_ARGS jobs show $i \
@@ -270,7 +270,7 @@ check_status () {
 						| awk '{$1=$1};1'`
 					DEVICE[$i]=$device
 
-					if [ ${STATUS[$i]} != $status ]; then
+					if [ "${STATUS[$i]}" != $status ]; then
 						STATUS[$i]=$status
 
 						# Something has changed
