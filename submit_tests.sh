@@ -2,19 +2,22 @@
 # Copyright (C) 2019, Renesas Electronics Europe GmbH, Chris Paterson
 # <chris.paterson2@renesas.com>
 #
-# This script scans the OUTPUT_DIR for any built Kernels and creates/submits the
-# relevant test jobs to the CIP LAVA master.
+# Copyright (C) 2019 GENIVI Alliance
+# Gunnar Andersson, <gandersson@genivi.org>
+# Modifications to include build-id in test definition and a few
+# other tweaks.  (Because we have system images as the test 
+# than only the kernel)
+#
+# This script scans the OUTPUT_DIR for any built Kernels/systems
+# and creates/submits the relevant test jobs to the CIP LAVA master.
 #
 # Script specific dependencies:
-# lavacli aws pwd sed date
+# lavacli pwd sed date
 #
-# The following must be set in GitLab CI variables for lavacli to work:
+# The following must be set by CI or scripts before this script is called, for
+# lavacli to work:
 # $CIP_LAVA_LAB_USER
 # $CIP_LAVA_LAB_TOKEN
-#
-# The following must be set in GitLab CI variables for aws to work:
-# $CIP_CI_AWS_ID
-# $CIP_CI_AWS_KEY
 #
 # Other global variables
 # $TEST_TIMEOUT: Length of time in minutes to wait for test completion. If
@@ -29,11 +32,13 @@ set -e
 ################################################################################
 WORK_DIR=`pwd`
 OUTPUT_DIR="$WORK_DIR/output"
-TEMPLATE_DIR="/opt/lava_templates"
+TEMPLATE_DIR="$WORK_DIR/lava_templates"
 ################################################################################
-AWS_URL_UP="s3://download.cip-project.org/ciptesting/ci"
-AWS_URL_DOWN="https://s3-us-west-2.amazonaws.com/download.cip-project.org/ciptesting/ci"
-LAVACLI_ARGS="--uri https://$CIP_LAVA_LAB_USER:$CIP_LAVA_LAB_TOKEN@lava.ciplatform.org/RPC2"
+
+# For us, source is always a local file URL
+URL_UP="sftp:///docs.projects.genivi.org/artifacts"
+URL_DOWN="file:///media/genivi_sftp/artifacts/steve"
+LAVACLI_ARGS="--uri https://$CIP_LAVA_LAB_USER:$CIP_LAVA_LAB_TOKEN@lava.genivi.org/RPC2"
 INDEX="0"
 if [ -z "$TEST_TIMEOUT" ]; then TEST_TIMEOUT=30; fi
 if [ -z "$SUBMIT_ONLY" ]; then SUBMIT_ONLY=false; fi
@@ -55,9 +60,9 @@ create_job () {
 	local testname="$1"
 	get_template $testname
 
-	local dtb_url="$AWS_URL_DOWN/$DTB"
-	local kernel_url="$AWS_URL_DOWN/$KERNEL"
-	local modules_url="$AWS_URL_DOWN/$MODULES"
+	local dtb_url="$URL_DOWN/$DTB"
+	local kernel_url="$URL_DOWN/$KERNEL"
+	local modules_url="$URL_DOWN/$MODULES"
 
 	if $USE_DTB; then
 		local job_name="${VERSION}_${ARCH}_${CONFIG}_${DTB_NAME}_${testname}"
@@ -78,8 +83,8 @@ create_job () {
 		sed -i "s|DTB_URL|$dtb_url|g" $job_definition
 	fi
 	sed -i "s|KERNEL_URL|$kernel_url|g" $job_definition
+	sed -i "s|ROOTFS_LOCATION|$pipeline_id/rootfs.tar.bz2|g" $job_definition
 }
-
 configure_aws () {
 	aws configure set aws_access_key_id $CIP_CI_AWS_ID
 	aws configure set aws_secret_access_key $CIP_CI_AWS_KEY
@@ -91,7 +96,7 @@ upload_binaries () {
 	configure_aws
 
 	# Note: If there are multiple jobs in the same pipeline building the
-	# same SHA, same ARCH and same CONFIG _name_, AWS binaries will be
+	# same SHA, same ARCH and same CONFIG _name_, then binaries will be
 	# overwritten.
 	aws s3 sync $OUTPUT_DIR/. $AWS_URL_UP --exclude jobs --acl public-read
 }
@@ -128,7 +133,7 @@ find_jobs () {
 	for jobfile in $OUTPUT_DIR/*.jobs; do
 		# Filter out commented lines and empty lines...
 		sed '/^#./d' < $jobfile | \
-		while read version arch config device kernel device_tree modules; do
+		while read version pipeline_id arch config device kernel device_tree modules; do
 			VERSION=$version
 			ARCH=$arch
 			CONFIG=$config
