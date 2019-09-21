@@ -1,168 +1,61 @@
-# linux-cip-ci
-[![pipeline status](https://gitlab.com/cip-project/cip-testing/linux-cip-ci/badges/master/pipeline.svg)](https://gitlab.com/cip-project/cip-testing/linux-cip-ci/commits/master)
+# Scripts for submitting jobs to LAVA test farm
 
-Current DOCKER_IMAGE_TAG version: v2
+This primarily reuses submit_tests.sh and the associated lava templates
+setup from the **[linux-cip-ci project](https://gitlab.com/cip-project/cip-testing/linux-cip-ci/)**
 
-This project builds the containers and scripts used in the CI testing of the
-linux-cip Kernel.
+While there are quite some changes, it seems useful to keep the git history
+and relationship to the project so I decided to start with forking **linux-cip-ci**.
 
-There are two docker containers, "build-image" and "test-image". You can guess
-what they are for.
+Removed:
+--------
 
-## build-image
-Docker container that includes Linux Kernel build dependencies.
+I [removed](https://github.com/gunnarx/linux-cip-ci/commit/611d5ef154794c4ea704319ff02c082e6fc45976) anything we don't use just for clarity, but the
+shared git history allows these to be easily brought back when needed:
 
-Also included is the `build_kernel.sh` script which handles the actual building
-of the Kernel for the given architecture and configurations.
+`build.Dockerfile`
+`build_kernel.sh ` -- We don't need to build kernels (see below for details)
 
-### build_kernel.sh
-This script starts by installing the relevant gcc compiler for the given
-architecture. It then builds the Kernel, device trees and modules as required
-for the given configuration.
+`test.Dockerfile`  -- Our CI workers (go-agent) that run this are already docker containers. That environment works well so no real need to keep another  container definition for testing/repeatability
 
-The GitLab CI configuration then archives the relevant binaries ready for the
-test stage to pick up.
+`.gitlab-ci.yml` -- We don't use GitLab's CI function
 
-**Parameters**  
-The following variables should be set in the gitlab-ci.yml job:  
-* `BUILD_ARCH`: The architecture to build for. Architectures currently supported
-are: arm, arm64, powerpc, x86.
-* `CONFIG`: The name of the configuration file to be used. Can be in either
-.config or defconfig format.
-* `CONFIG_LOC`: Must be one of the following options:
-  * `intree`: Configuration is present in the linux-cip Kernel.
-  * `cip-kernel-configs`: Configuration is present in the [cip-kernel-configs](https://gitlab.com/cip-project/cip-kernel/cip-kernel-config) repository.
-  * `url`: Link to raw defconfig file hosted somewhere public. Should be a link
-to the directory where the config is stored, not the actual file.
-* `DEVICES`: A list of device-types as defined in LAVA that are to be tested.
-This must be set if testing is required.
-* `DTBS`: A list of device tree blobs (including extension) that are to be used
-in testing. Exactly one `DTB` per device-type in `DEVICES` must be defined.
-* `BUILD_ONLY`: Set to 'true' if don't want to test this configuration, only
-build. If this is not set a default of 'false' is used.
+Added:
+------
+`gocd_prepare_test_job.sh` -- This script outputs the ".jobs" definition into
+the output directory in the format that submit_tests.sh expects
 
-## test-image
-Used to build a container that includes the dependencies required for testing.
+Changed:
+--------
 
-Also included is the `submit_tests.sh` script which creates and submits LAVA
-test jobs.
+No kernels are compiled since we use this only to send complete images, and
+these are built already when we get to this point.  This means that the
+metadata values for CONFIG, DTB, MODULES and KERNEL are less useful for us.
+The configuration of those are defined in the particular image build and
+the values are usually left empty.
 
-### submit_tests.sh
-This script starts by searching for Kernels that are in the `$OUTPUT_DIR`
-directory. Each Kernel then gets uploaded to an S3 bucket on AWS. The script
-then creates LAVA test jobs as required and submits them to the CIP LAVA master.
+The original project uses AWS S3 for artifact sharing between the CI system
+and Lava.  In our case we SFTP/SSHFS combination and removed all AWS
+interaction.
 
-**Prerequisites**  
-The `submit_tests.sh` script relies on the following secret environment
-variables being set. This can be done in GitLab in `settings/ci_cd`.
-* `CIP_CI_AWS_ID`
-* `CIP_CI_AWS_KEY`
-* `CIP_LAVA_LAB_USER`
-* `CIP_LAVA_LAB_TOKEN`
+This version adds one more configurable option in the .jobs definition named
+`PIPELINE_ID` because we would like to identify jobs by which pipeline is being
+tested. In the Go.CD CI system, the combination of pipeline name and counter
+is the official way to identify a particular build. (We also use a shorter
+build-label that identifies repo fork, branch, and commit hash which is 
+set as the `VERSION` metadata)
 
-**Parameters**  
-* `TEST_TIMEOUT`: Length of time in minutes to wait for test completion. If
-unset a default of 30 minutes is used.
-* `SUBMIT_ONLY`: Set to 'true' if you don't want to wait to see if submitted
-LAVA jobs complete. If this is not set a default of 'false' is used.
+For the benefit of the final job name, `CONFIG` is also "misused" to specify
+pipeline identity (since as explained above, varying kernel-config is not the
+purpose here, and it can still be found, if needed, by tracing back to
+the image build identification)
 
-## linux-cip-ci version
-Wherever possible when changes are made to the containers and scripts in
-linux-cip-ci, care is taken not to break backwards compatibility. Sometimes this
-is not possible so a `DOCKER_IMAGE_TAG` variable has been created.
+`CIP_LAVA_LAB_USER` and `CIP_LAVA_LAB_TOKEN` login credentials are as
+documented in the original but this version adds the alternative to specify
+the path to a sourceable script defining these variables.  The path to such
+a script shall then be defined in: `LAVA_CREDENTIALS_FILE`
 
-Each time there is a breaking change this variable is incremented in the
-.gitlab-ci.yml file in the linux-cip-ci repository.
+`TEST_TIMEOUT` and `SUBMIT_ONLY` are as documented in the original.
 
-## Example Use
-The below `.gitlab-ci.yml` file shows how linux-cip-ci can be used.
+Modified version by Gunnar Andersson <gandersson @@ genivi.org>
 
-```
-variables:
-  GIT_STRATEGY: clone
-  GIT_DEPTH: "10"
-  DOCKER_DRIVER: overlay2
-  DOCKER_IMAGE_TAG: v2
-
-arm_renesas_shmobile_defconfig:
-  stage: build
-  image: registry.gitlab.com/cip-project/cip-testing/linux-cip-ci:build-$DOCKER_IMAGE_TAG
-  variables:
-    BUILD_ARCH: arm
-    CONFIG: renesas_shmobile_defconfig
-    CONFIG_LOC: cip-kernel-config
-    DEVICES: r8a7743-iwg20d-q7 r8a7745-iwg22d-sodimm r8a77470-iwg23s-sbc
-    DTBS: r8a7743-iwg20d-q7-dbcm-ca.dtb r8a7745-iwg22d-sodimm-dbhd-ca.dtb r8a77470-iwg23s-sbc.dtb
-  script:
-    - /opt/build_kernel.sh
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - output
-
-arm64_renesas_defconfig:
-  stage: build
-  image: registry.gitlab.com/cip-project/cip-testing/linux-cip-ci:build-$DOCKER_IMAGE_TAG
-  variables:
-    BUILD_ARCH: arm64
-    CONFIG: renesas_defconfig
-    CONFIG_LOC: cip-kernel-config
-    DEVICES: r8a774c0-ek874 r8a774a1-hihope-rzg2m-ex
-    DTBS: r8a774c0-ek874.dtb r8a774a1-hihope-rzg2m-ex.dtb
-  script:
-    - /opt/build_kernel.sh
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - output
-
-arm64_defconfig:
-  stage: build
-  image: registry.gitlab.com/cip-project/cip-testing/linux-cip-ci:build-$DOCKER_IMAGE_TAG
-  variables:
-    BUILD_ARCH: arm64
-    CONFIG: defconfig
-    CONFIG_LOC: intree
-    DEVICES: r8a774c0-ek874 r8a774a1-hihope-rzg2m-ex
-    DTBS: r8a774c0-ek874.dtb r8a774a1-hihope-rzg2m-ex.dtb
-  script:
-    - /opt/build_kernel.sh
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - output
-
-x86_siemens_server_defconfig:
-  stage: build
-  image: registry.gitlab.com/cip-project/cip-testing/linux-cip-ci:build-$DOCKER_IMAGE_TAG
-  variables:
-    BUILD_ARCH: x86
-    CONFIG: siemens_server_defconfig
-    CONFIG_LOC: cip-kernel-config
-    BUILD_ONLY: "true"
-  script:
-    - /opt/build_kernel.sh
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - output
-
-run_tests:
-  stage: test
-  image: registry.gitlab.com/cip-project/cip-testing/linux-cip-ci:test-$DOCKER_IMAGE_TAG
-  when: always
-  variables:
-    GIT_STRATEGY: none
-    TEST_TIMEOUT: 30
-  script:
-    - /opt/submit_tests.sh
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - output
-```
+For additional/original documentation please refer to the [original README](https://gitlab.com/cip-project/cip-testing/linux-cip-ci/blob/master/README.md)
