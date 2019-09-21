@@ -153,8 +153,7 @@ find_jobs () {
 			fi
 
 			print_kernel_info
-			create_job healthcheck
-			create_job smc
+			create_job genivi_image_test
 		done
 	done
 }

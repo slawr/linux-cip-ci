@@ -1,0 +1,51 @@
+device_type: r8a7796-m3ulcb
+
+job_name: JOB_NAME
+timeouts:
+  job:
+    minutes: 10
+  action:
+   minutes: 5
+  actions:
+    power-off:
+      seconds: 30
+priority: high
+visibility: public
+
+actions:
+- deploy:
+    timeout:
+      minutes: 4
+    to: tftp
+    kernel:
+      url: file:///media/genivi_sftp/artifacts/steve/Image-m3ulcb.bin?raw=true 
+#      url: KERNEL_URL
+      type: image
+#    ramdisk:
+    nfsrootfs:
+      url: file:///media/genivi_sftp/artifacts/ROOTFS_LOCATION
+      compression: bz2
+#      archive: tar
+#    modules:
+#      url: https://github.com/montjoie/lava-healthchecks-binary/blob/master/mainline/master/v4.15/arm64/defconfig/modules.tar.xz?raw=true
+#      compression: xz
+    dtb:
+      url: file:///media/genivi_sftp/artifacts/steve/r8a7796-m3ulcb.dtb?raw=true
+    os: oe
+
+
+- boot:
+    auto_login:
+      login_prompt: 'm3ulcb login: '
+      username: root
+      password_prompt: 'Password:'
+      password: root
+    timeout:
+      minutes: 5
+    method: u-boot
+#    commands: ramdisk
+    commands: nfs
+    prompts:
+#      - 'linaro-test'
+      - 'root@m3ulcb:~#'
+#      - '/ #'
