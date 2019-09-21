@@ -85,20 +85,13 @@ create_job () {
 	sed -i "s|KERNEL_URL|$kernel_url|g" $job_definition
 	sed -i "s|ROOTFS_LOCATION|$pipeline_id/rootfs.tar.bz2|g" $job_definition
 }
-configure_aws () {
-	aws configure set aws_access_key_id $CIP_CI_AWS_ID
-	aws configure set aws_secret_access_key $CIP_CI_AWS_KEY
-	aws configure set default.region us-west-2
-	aws configure set default.output text
-}
 
 upload_binaries () {
-	configure_aws
-
 	# Note: If there are multiple jobs in the same pipeline building the
 	# same SHA, same ARCH and same CONFIG _name_, then binaries will be
 	# overwritten.
-	aws s3 sync $OUTPUT_DIR/. $AWS_URL_UP --exclude jobs --acl public-read
+    echo DO SFTP HERE
+    echo FIXME upload
 }
 
 print_kernel_info () {
