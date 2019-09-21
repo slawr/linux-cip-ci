@@ -126,6 +126,8 @@ find_jobs () {
 
 	# Process job files
 	for jobfile in $OUTPUT_DIR/*.jobs; do
+		# Filter out commented lines and empty lines...
+		sed '/^#./d' < $jobfile | \
 		while read version arch config device kernel device_tree modules; do
 			VERSION=$version
 			ARCH=$arch
@@ -151,7 +153,7 @@ find_jobs () {
 			print_kernel_info
 			create_job healthcheck
 			create_job smc
-		done < $jobfile
+		done
 	done
 }
 
