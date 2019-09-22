@@ -115,3 +115,4 @@ $(get_version) $(get_pipeline_instance) $(get_arch) $(get_config) $(get_device) 
 EOT
 
 get_credentials
+. submit_tests.sh
