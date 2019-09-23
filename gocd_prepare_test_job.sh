@@ -93,27 +93,36 @@ get_arch() {
     echo "UNSUPPORTED_MACHINE"
   fi
 }
+
 get_config() {
-  echo "FIXME_UNKNOWN_CONFIG"
+  # Since we don't care to specify kernel config in our test names we can
+  # "misuse" CONFIG for another purpose.  An alternative would be to change
+  # submit_tests.sh further but it seems useful to keep changes there to a
+  # minimum, if we want to merge some future updates.  We still want a useful
+  # value here since CONFIG is included in the Job name and reported in the
+  # Lava web interface.  It is therefore one place where we can insert the
+  # pipeline identification string instead.
+  get_pipeline_instance | sed 's|/|@|'
 }
+
 get_device() {
   # Coding the relationship between $TARGET used in our Yocto builds
   # and the expected test target device type:
   if [ "$TARGET" = "r-car-m3-starter-kit" ] ; then
     echo "r8a7743-iwg20m"
   else
-    # For now we don't know any other targets...
+    # For now we don't know any other test targets that are hooked up...
     echo "UNSUPPORTED_MACHINE"
   fi
 }
 get_kernel() {
-  echo "DEFAULT_KERNEL"  # Not defined  -> basically it is fixed in test definition template
+  echo "_"  # Not defined  -> basically it is fixed in test definition template
 }
 get_device_tree() {
-  echo "DEFAULT_DTB"     # Not defined, same as above
+  echo "_"  # Not defined  -> basically it is fixed in test definition template
 }
 get_modules() {
-  echo "DEFAULT_MODULES"     # Not defined, same as above
+  echo "_"     # Not defined, same as above
 }
 get_jobname() {
   echo "myjob.jobs"
@@ -122,8 +131,8 @@ get_jobname() {
 jobfile="$OUTPUT_DIR/$(get_jobname)"
 cat <<EOT >$jobfile
 # This is a comment
-# Format (BUILD_ID added by us)
-# VERSION BUILD_ID ARCH CONFIG DEVICE KERNEL DEVICE_TREE MODULES
+# Format (PIPELINE_ID added by us)
+# VERSION PIPELINE_ID ARCH CONFIG DEVICE KERNEL DEVICE_TREE MODULES
 $(get_version) $(get_pipeline_instance) $(get_arch) $(get_config) $(get_device) $(get_kernel) $(get_device_tree) $(get_modules)
 EOT
 
