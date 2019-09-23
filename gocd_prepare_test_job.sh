@@ -78,7 +78,20 @@ get_pipeline_instance() {
   echo "$(get_value pipe_name GO_PIPELINE_NAME)/$(get_value counter GO_PIPELINE_COUNTER)"
 }
 get_arch() {
-  get_value arch MACHINE  # $MACHINE value from Yocto build
+  # Coding the relationship between $TARGET used in our Yocto builds
+  # and the CPU architecture
+  if [[ "$TARGET" =~ r-car.*3 ]] ; then
+    echo "arm64"
+  elif [[ "$TARGET" =~ qemuarm64 ]] ; then
+    echo "arm64"
+  elif [[ "$TARGET" =~ x86.64 ]] ; then
+    echo "x86-64"
+  elif [[ "$TARGET" =~ x86 ]] ; then
+    echo "x86"
+  else
+    # For now we don't know any other targets...
+    echo "UNSUPPORTED_MACHINE"
+  fi
 }
 get_config() {
   echo "FIXME_UNKNOWN_CONFIG"
