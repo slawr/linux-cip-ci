@@ -137,6 +137,6 @@ EOT
 
 # Delegate to submit_tests.sh
 get_credentials
-. submit_tests.sh
+. submit_tests.sh "$1"
 
 

@@ -90,12 +90,26 @@ create_job () {
 	sed -i "s|ROOTFS_LOCATION|$pipeline_id/rootfs.tar.bz2|g" $job_definition
 }
 
+# Parameters:  $1 = path to root file system tarball
 upload_binaries () {
 	# Note: If there are multiple jobs in the same pipeline building the
 	# same SHA, same ARCH and same CONFIG _name_, then binaries will be
 	# overwritten.
-    echo DO SFTP HERE
-    echo FIXME upload
+    ROOTFS="$1"
+    if [ ! -f "$ROOTFS" ] ; then
+      echo "upload_binaries: Specified root file system tarball does not exist!"
+      echo "($ROOTFS)"
+      echo "Stopping."
+      exit 2
+    fi
+
+    cat <<END_OF_COMMANDS | sftp -i /var/go/.ssh/id_rsa go_artifact_upload@docs.projects.genivi.org:artifacts
+mkdir $GO_PIPELINE_NAME
+mkdir $GO_PIPELINE_NAME/$GO_PIPELINE_COUNTER
+cd $GO_PIPELINE_NAME/$GO_PIPELINE_COUNTER
+put "$ROOTFS" rootfs.tar.bz2
+END_OF_COMMANDS
+
 }
 
 print_kernel_info () {
@@ -328,9 +342,10 @@ check_status () {
 
 trap clean_up SIGHUP SIGINT SIGTERM
 set_up
-
 find_jobs
-upload_binaries
+# NOTE - this variant of the script requires the root filesystem tarball path
+# to be specified as first parameter:
+upload_binaries "$1"
 submit_jobs
 if ! $SUBMIT_ONLY; then
 	check_status
