@@ -327,7 +327,8 @@ check_status () {
 	fi
 
 	if $error; then
-		echo "Errors during testing"
+		echo "*** Errors during testing"
+		echo "*** Check this URL for details https://lava.genivi.org/scheduler/job/$i"
 		clean_up
 		exit 1
 	fi
