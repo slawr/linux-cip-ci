@@ -41,7 +41,7 @@ CIP_LAVA_LAB_TOKEN=fds72hcdjkasl32nfdsof3h7pcsah9f3y432fhuoewqjfewahufew
 
 # For us, source is always a local file URL
 URL_UP="sftp:///docs.projects.genivi.org/artifacts"
-URL_DOWN="file:///media/genivi_sftp/artifacts/steve"
+URL_DOWN="file:///media/genivi_sftp/artifacts"
 LAVACLI_ARGS="--uri https://$CIP_LAVA_LAB_USER:$CIP_LAVA_LAB_TOKEN@lava.genivi.org/RPC2"
 INDEX="0"
 if [ -z "$TEST_TIMEOUT" ]; then TEST_TIMEOUT=30; fi
@@ -64,9 +64,11 @@ create_job () {
 	local testname="$1"
 	get_template $testname
 
-	local dtb_url="$URL_DOWN/$DTB"
-	local kernel_url="$URL_DOWN/$KERNEL"
-	local modules_url="$URL_DOWN/$MODULES"
+	local url_down="$URL_DOWN/$pipeline_id"
+	local dtb_url="$url_down/$DTB"
+	local kernel_url="$url_down/$KERNEL"
+	local modules_url="$url_down/$MODULES"
+	local rootfs_url="$url_down/rootfs.tar.bz2"
 
 	if $USE_DTB; then
 		local job_name="${VERSION}_${ARCH}_${CONFIG}_${DTB_NAME}_${testname}"
@@ -87,7 +89,7 @@ create_job () {
 		sed -i "s|DTB_URL|$dtb_url|g" $job_definition
 	fi
 	sed -i "s|KERNEL_URL|$kernel_url|g" $job_definition
-	sed -i "s|ROOTFS_LOCATION|$pipeline_id/rootfs.tar.bz2|g" $job_definition
+	sed -i "s|ROOTFS_URL|$rootfs_url|g" $job_definition
 }
 
 # Parameters:  $1 = path to root file system tarball
