@@ -24,9 +24,6 @@ if [ -z "$LAVA_CREDENTIALS_FILE" ] ; then
   fi
 fi
 
-
-#FIXME  VARS ARE NOT USED BY SUBMIT SHELL SCRIPT
-
 warn() {
   cat <<EOT 1>&2
   $@
@@ -129,6 +126,8 @@ get_jobname() {
 }
 
 jobfile="$OUTPUT_DIR/$(get_jobname)"
+
+# Create job file that is consumed by linux-cip-ci/submit_tests.sh
 cat <<EOT >$jobfile
 # This is a comment
 # Format (PIPELINE_ID added by us)
@@ -136,5 +135,8 @@ cat <<EOT >$jobfile
 $(get_version) $(get_pipeline_instance) $(get_arch) $(get_config) $(get_device) $(get_kernel) $(get_device_tree) $(get_modules)
 EOT
 
+# Delegate to submit_tests.sh
 get_credentials
 . submit_tests.sh
+
+
