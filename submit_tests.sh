@@ -36,7 +36,7 @@ TEMPLATE_DIR="$WORK_DIR/lava_templates"
 ################################################################################
 
 # For us, source is always a local file URL
-URL_UP="sftp:///docs.projects.genivi.org/artifacts"
+URL_UP="sftp://go_artifact_upload@docs.projects.genivi.org"
 URL_DOWN="file:///media/genivi_sftp/artifacts"
 LAVACLI_ARGS="--uri https://$CIP_LAVA_LAB_USER:$CIP_LAVA_LAB_TOKEN@lava.genivi.org/RPC2"
 INDEX="0"
@@ -101,7 +101,11 @@ upload_binaries () {
       exit 2
     fi
 
-    cat <<END_OF_COMMANDS | sftp -i /var/go/.ssh/id_rsa go_artifact_upload@docs.projects.genivi.org:artifacts
+    eval $(ssh-agent)
+    ssh-add /var/go/.ssh/id_rsa
+    cat <<END_OF_COMMANDS | sftp $URL_UP
+
+cd artifacts
 mkdir $GO_PIPELINE_NAME
 mkdir $GO_PIPELINE_NAME/$GO_PIPELINE_COUNTER
 cd $GO_PIPELINE_NAME/$GO_PIPELINE_COUNTER
