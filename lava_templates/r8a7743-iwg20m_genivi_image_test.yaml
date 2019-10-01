@@ -18,13 +18,13 @@ actions:
       minutes: 4
     to: tftp
     kernel:
-      url: file:///media/genivi_sftp/artifacts/steve/Image-m3ulcb.bin?raw=true 
+      url: KERNEL_URL
       type: image
     nfsrootfs:
-      url: file:///media/genivi_sftp/artifacts/ROOTFS_LOCATION
+      url: ROOTFS_URL
       compression: bz2
     dtb:
-      url: file:///media/genivi_sftp/artifacts/steve/r8a7796-m3ulcb.dtb?raw=true
+      url: DTB_URL
     os: oe
 
 - boot:
