@@ -9,7 +9,7 @@ timeouts:
   actions:
     power-off:
       seconds: 30
-priority: high
+priority: medium
 visibility: public
 
 actions:
