@@ -106,7 +106,7 @@ get_device() {
   # Coding the relationship between $TARGET used in our Yocto builds
   # and the expected test target device type:
   if [ "$TARGET" = "r-car-m3-starter-kit" ] ; then
-    echo "r8a7743-iwg20m"
+    echo "r8a7796-m3ulcb"
   else
     # For now we don't know any other test targets that are hooked up...
     echo "UNSUPPORTED_MACHINE"
