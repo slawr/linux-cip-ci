@@ -112,14 +112,14 @@ get_device() {
     echo "UNSUPPORTED_MACHINE"
   fi
 }
-get_kernel() {
+get_kernel_name() {
   echo "_"  # Not defined  -> basically it is fixed in test definition template
 }
-get_device_tree() {
+get_device_tree_name() {
   echo "_"  # Not defined  -> basically it is fixed in test definition template
 }
 get_modules() {
-  echo "_"     # Not defined, same as above
+  echo ""     # Not defined, same as above
 }
 get_jobname() {
   echo "myjob.jobs"
@@ -127,16 +127,22 @@ get_jobname() {
 
 jobfile="$OUTPUT_DIR/$(get_jobname)"
 
+# (ROOT_FS = "$1" - passed to submit_tests.sh but it is not used in naming of
+# the job and therefore not used here)
+KERNEL="$2"
+DTB="$3"
+
+
 # Create job file that is consumed by linux-cip-ci/submit_tests.sh
 cat <<EOT >$jobfile
 # This is a comment
 # Format (PIPELINE_ID added by us)
 # VERSION PIPELINE_ID ARCH CONFIG DEVICE KERNEL DEVICE_TREE MODULES
-$(get_version) $(get_pipeline_instance) $(get_arch) $(get_config) $(get_device) $(get_kernel) $(get_device_tree) $(get_modules)
+$(get_version) $(get_pipeline_instance) $(get_arch) $(get_config) $(get_device) $KERNEL $DTB $(get_modules)
 EOT
 
 # Delegate to submit_tests.sh
 get_credentials
-. submit_tests.sh "$1"
+. submit_tests.sh "$1" "$2" "$3"
 
 
