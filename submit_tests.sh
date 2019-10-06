@@ -61,9 +61,11 @@ create_job () {
 	get_template $testname
 
 	local url_down="$URL_DOWN/$pipeline_id"
-	local dtb_url="$url_down/$DTB"
-	local kernel_url="$url_down/$KERNEL"
-	local modules_url="$url_down/$MODULES"
+	local dtb_url="$url_down/$(basename $DTB)"
+	local kernel_url="$url_down/$(basename $KERNEL)"
+	if [ ! -z "$MODULES" ]; then
+		local modules_url="$url_down/$(basename $MODULES)"
+	fi
 	local rootfs_url="$url_down/rootfs.tar.bz2"
 
 	if $USE_DTB; then
@@ -93,7 +95,9 @@ upload_binaries () {
 	# Note: If there are multiple jobs in the same pipeline building the
 	# same SHA, same ARCH and same CONFIG _name_, then binaries will be
 	# overwritten.
-    ROOTFS="$1"
+    local ROOTFS="$1"
+    local KERNEL="$2"
+    local DTB="$3"
     if [ ! -f "$ROOTFS" ] ; then
       echo "upload_binaries: Specified root file system tarball does not exist!"
       echo "($ROOTFS)"
@@ -106,6 +110,8 @@ mkdir $GO_PIPELINE_NAME
 mkdir $GO_PIPELINE_NAME/$GO_PIPELINE_COUNTER
 cd $GO_PIPELINE_NAME/$GO_PIPELINE_COUNTER
 put "$ROOTFS" rootfs.tar.bz2
+put "$KERNEL" kernel.bin
+put "$DTB" this.dtb
 END_OF_COMMANDS
 
 }
@@ -344,7 +350,7 @@ set_up
 find_jobs
 # NOTE - this variant of the script requires the root filesystem tarball path
 # to be specified as first parameter:
-upload_binaries "$1"
+upload_binaries "$1" "$2" "$3"
 submit_jobs
 if ! $SUBMIT_ONLY; then
 	check_status
