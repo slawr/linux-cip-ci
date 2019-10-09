@@ -15,7 +15,7 @@ visibility: public
 actions:
 - deploy:
     timeout:
-      minutes: 4
+      minutes: 20
     to: tftp
     kernel:
       url: KERNEL_URL
