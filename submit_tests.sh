@@ -188,6 +188,7 @@ submit_job() {
 		then
 			echo "Something went wrong with job submission. LAVA returned:"
 			echo ${ret}
+			exit 4
 		else
 			echo "Job submitted successfully as #${ret}."
 
