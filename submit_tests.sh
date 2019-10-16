@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 # Copyright (C) 2019, Renesas Electronics Europe GmbH, Chris Paterson
 # <chris.paterson2@renesas.com>
 #
