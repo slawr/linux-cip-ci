@@ -171,7 +171,7 @@ find_jobs () {
 			fi
 
 			print_kernel_info
-			create_job genivi_image_test
+			create_job $TEMPLATE_IDENTIFIER
 		done
 	done
 }
@@ -351,7 +351,11 @@ set_up
 find_jobs
 # NOTE - this variant of the script requires the root filesystem tarball path
 # to be specified as first parameter:
-upload_binaries "$1" "$2" "$3"
+
+# Base name of template (excluding other variable things like ARCH/CONFIG/DEVICE/...)
+# e.g. for r8a7796-m3ulcb_genivi_image_test.yaml, TEMPLATE_IDENTIFIER is: genivi_image_test
+TEMPLATE_IDENTIFIER="$1"
+upload_binaries "$2" "$3" "$4"
 submit_jobs
 if ! $SUBMIT_ONLY; then
 	check_status
