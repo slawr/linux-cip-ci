@@ -41,11 +41,12 @@ actions:
       - 'root@m3ulcb:~#'
 
 - test:
-    auto_login:
-      login_prompt: 'FAIL THIS '
-      username: root
-      password_prompt: 'Password:'
-      password: root
-    prompts:
-      - 'FAIL ME HERE'
+    timeout:
+      minutes: 8
+    definitions:
+    - repository: https://github.com/slawr/genivi-test-definitions.git
+      from: git
+      path: automated/linux/meta-ivi-smoke-test/meta-ivi-smoke-test.yaml
+      name: meta-ivi-smoke-test
+      branch: stevel/initial-experiments
 
